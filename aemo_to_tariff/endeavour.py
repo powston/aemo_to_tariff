@@ -25,12 +25,14 @@ def battery_tariffs(customer_type: str):
         raise ValueError("Invalid customer type. Must be 'Residential' or 'Business'.")
 
 
+# below reference page numbers are from this doc: https://www.endeavourenergy.com.au/__data/assets/pdf_file/0014/35024/NUOS-Price-List-202526-v1.1.pdf
 tariffs = {
     'N70': {
         'name': 'Residential Flat',
         'periods': [
-            ('Anytime', time(0, 0), time(23, 59), 10.96)
-        ]
+            ('Anytime', time(0, 0), time(23, 59), 10.8173)
+        ],
+        'fixed_daily_charge': 63.1270,  # see page 34 
     },
     'N71': {
         'name': 'Residential Seasonal TOU', # 21.7964 13.8419 3.4252 10.4931
@@ -42,15 +44,16 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 10.4931),
             ('Off Peak', time(20, 0), time(23, 59), 10.4931)
         ],
-        'fixed_daily_charge': 55.5325,
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'fixed_daily_charge': 63.1270,  # see page 34 
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
     },
     'N90': {
         'name': 'General Supply Block',
         'periods': [
-            ('Block 1', time(0, 0), time(23, 59), 11.46),
-            ('Block 2', time(0, 0), time(23, 59), 13.39)
-        ]
+            ('Block 1', time(0, 0), time(23, 59), 11.2803),
+            ('Block 2', time(0, 0), time(23, 59), 13.5302)
+        ],
+        'fixed_daily_charge': 88.8470,  # see page 34 
     },
     'N91': {
         'name': 'GS Seasonal TOU',
@@ -62,8 +65,8 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 12.1974),
             ('Off Peak', time(20, 0), time(23, 59), 12.1974)
         ],
-        'fixed_daily_charge': 78.0125,
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'fixed_daily_charge': 88.8470,  # see page 34 
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
     },
     'N19': {
         'name': 'LV Seasonal STOU Demand',
@@ -74,19 +77,21 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 3.6458),
             ('Off Peak', time(20, 0), time(23, 59), 3.6458)
         ],
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'fixed_daily_charge': 2612.00,  # see page 34 
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
     },
-    'N95': {
+    'N95': {  # below from page 34 of https://www.endeavourenergy.com.au/__data/assets/pdf_file/0014/35024/NUOS-Price-List-202526-v1.1.pdf
         'name': 'Storage',
         'periods': [
-            ('High-season Peak', time(16, 0), time(20, 0), 14.4462),
-            ('Low-season Peak', time(16, 0), time(20, 0), 5.6962),
+            ('High-season Peak', time(16, 0), time(20, 0), 13.1329),
+            ('Low-season Peak', time(16, 0), time(20, 0), 5.1784),
             ('Solar Soak', time(10, 0), time(14, 0), 0.0),
-            ('Off Peak', time(0, 0), time(10, 0), 2.0126),
-            ('Off Peak', time(14, 0), time(16, 0), 2.0126),
-            ('Off Peak', time(20, 0), time(23, 59), 2.0126)
+            ('Off Peak', time(0, 0), time(10, 0), 1.8296),
+            ('Off Peak', time(14, 0), time(16, 0), 1.8296),
+            ('Off Peak', time(20, 0), time(23, 59), 1.8296)
         ],
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'fixed_daily_charge': 161.1570,  # see page 34  
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
     }
 }
 
@@ -94,12 +99,12 @@ demand_charges = {
     'N71': None,
     'N91': None,
     'N19': {
-        'Peak': 5.4400,  # $/kW/day
+        'Peak': 49.42,  # $/kW/day see page 34, low-season is 44.80
         'Shoulder': 0.0,  # $/kW/day
         'Off-Peak': 0.0  # $/kW/day
     },
     'N73': {
-        'Peak': 5.4400,  # $/kW/day
+        'Peak': 14.27,  # $/kW/day - see page 34, low-season demand is 9.23
         'Off-Peak': 0.0,  # $/kW/day
         'Shoulder': 0.0  # $/kW/day
     }
@@ -109,21 +114,22 @@ feed_in_tariffs = {
     'N61': {
         'name': 'Residential Electrify',
         'periods': [
-            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),
-            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),
-            ('Off Peak', time(0, 0), time(10, 0), -1.9690)
+            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),  # inc GST - correct?
+            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),  # inc GST - correct?
+            ('Off Peak', time(10, 0), time(14, 0), -1.9690)  # inc GST - correct?
         ],
         'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
     },
     'N95': {
         'name': 'Storage',
         'periods': [
-            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),
-            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),
-            ('Off Peak', time(0, 0), time(10, 0), -1.9690)
+            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),  # inc GST - correct?
+            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),  # inc GST - correct?
+            ('Off Peak', time(10, 0), time(14, 0), -1.9690)  # inc GST - correct?
         ],
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'weekdays': [0, 1, 2, 3, 4],
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
     }
 }
 
