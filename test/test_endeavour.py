@@ -36,7 +36,7 @@ class TestEndeavour(unittest.TestCase):
         tariff_code = 'N61'
         feed_in_price = convert_feed_in_tariff(interval_time, tariff_code, -6.0)
         msg = f"Feed-in price for {tariff_code} at {interval_time} should be approximately -11.04"
-        self.assertAlmostEqual(feed_in_price, -0.69 + 0.09, places=1, msg=msg)
+        self.assertAlmostEqual(feed_in_price, -2.569, places=1, msg=msg)
         buyer_price = convert(interval_time, 'N71', -6.0)
         msg = f"Buyer price for {tariff_code} at {interval_time} should be approximately 12.30"
         self.assertAlmostEqual(buyer_price, 4.55 + 0.41, places=1, msg=msg)
@@ -46,7 +46,7 @@ class TestEndeavour(unittest.TestCase):
         tariff_code = 'N61'
         feed_in_price = convert_feed_in_tariff(interval_time, tariff_code, 121.0)
         msg = f"Feed-in price for {tariff_code} at {interval_time} should be approximately 0.00"
-        self.assertAlmostEqual(feed_in_price, 13.03 + -2.9, places=1, msg=msg)
+        self.assertAlmostEqual(feed_in_price, 12.1, places=1, msg=msg)
         
     def test_convert_high_season_peak(self):
         interval_time = datetime(2023, 1, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))

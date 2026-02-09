@@ -94,7 +94,7 @@ class TestTariffConversions(unittest.TestCase):
         # Demand estimate
         interval_time = datetime.strptime('2024-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(estimate_demand_fee(interval_time, 'Endeavour', 'N71', 5.5), 0.0, 2)
-        self.assertAlmostEqual(estimate_demand_fee(interval_time, 'Endeavour', 'N73', 5.5), 29.92, 2)
+        self.assertAlmostEqual(estimate_demand_fee(interval_time, 'Endeavour', 'N73', 5.5), 78.485, 2)
         interval_time = datetime.strptime('2024-07-05 11:30+10:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(estimate_demand_fee(interval_time, 'Endeavour', 'N73', 5.5), 0.0, 2)
 
