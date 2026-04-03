@@ -6,7 +6,8 @@ from zoneinfo import ZoneInfo
 def time_zone():
     return 'Australia/Melbourne'
 
-# Example tariff: NAST11S (Small residential time‑of‑use with standard feed‑in)
+# AusNet Services tariffs
+# Rates from AER-approved Schedule of Tariffs 2024-25
 tariffs = {
     'NAST11S': {
         'name': 'Small Business Time of Use',
@@ -15,12 +16,19 @@ tariffs = {
             ('Off-Peak', time(0, 0), time(15, 0), 14.6394),
             ('Off-Peak', time(21, 0), time(0, 0), 14.6394)
         ]
+    },
+    'NEE11S': {
+        'name': 'Small Residential Single Rate (Standard Feed-in)',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 13.6472)
+        ]
     }
 }
 
 # Optional daily fees if available
 daily_fees = {
-    'NAST11S': 3.00  # You can update this based on AER data
+    'NAST11S': 3.00,
+    'NEE11S': 0.3795,  # $138.51/year = 37.95 c/day
 }
 
 # Optional demand charges if needed
