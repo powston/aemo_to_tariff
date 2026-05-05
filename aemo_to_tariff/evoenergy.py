@@ -56,7 +56,7 @@ tariffs = {
             ('Off-peak', time(15, 0), time(17, 0), 5.665)
         ],
         'fixed_daily_charge': 34.984,  # Fixed daily charge in c/day
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # All year
     },
     '018': {
         'name': 'New Residential TOU Network XMC',
