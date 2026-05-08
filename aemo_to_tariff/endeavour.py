@@ -90,8 +90,17 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 1.8296),
             ('Off Peak', time(20, 0), time(23, 59), 1.8296)
         ],
-        'fixed_daily_charge': 161.1570,  # see page 34  
+        'fixed_daily_charge': 161.1570,  # see page 34
         'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+    },
+    'N73': {
+        'name': 'Residential Demand Transitional',
+        'periods': [
+            ('Solar Soak', time(10, 0), time(14, 0), 3.4252),
+            ('Off Peak', time(0, 0), time(10, 0), 9.5389),
+            ('Off Peak', time(14, 0), time(23, 59), 9.5389)
+        ],
+        'fixed_daily_charge': 63.1270,
     }
 }
 
@@ -104,9 +113,10 @@ demand_charges = {
         'Off-Peak': 0.0  # $/kW/day
     },
     'N73': {
-        'Peak': 14.27,  # $/kW/day - see page 34, low-season demand is 9.23
-        'Off-Peak': 0.0,  # $/kW/day
-        'Shoulder': 0.0  # $/kW/day
+        'Peak': 14.2700,  # c/kW/day high-season (Nov-Mar) - see page 34
+        'Peak_Low': 7.3800,  # c/kW/day low-season (Apr-Oct)
+        'Off-Peak': 0.0,  # c/kW/day
+        'Shoulder': 0.0  # c/kW/day
     }
 }
 
