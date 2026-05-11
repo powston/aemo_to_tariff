@@ -148,7 +148,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
     elif network == 'sapn':
         return sapower.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'tasnetworks':
-        return tasnetworks.get_daily_fee(tariff)
+        return tasnetworks.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'victoria':
         return victoria.get_daily_fee(tariff)
     elif network == 'essential':
@@ -195,7 +195,7 @@ def calculate_demand_fee(network, tariff, demand_kw, days=30, interval_time=None
     elif network == 'sapn':
         return sapower.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'tasnetworks':
-        return tasnetworks.calculate_demand_fee(tariff, demand_kw, days)
+        return tasnetworks.calculate_demand_fee(tariff, demand_kw, days=days, interval_time=interval_time)
     elif network == 'endeavour':
         return endeavour.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'victoria':
