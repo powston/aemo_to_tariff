@@ -57,3 +57,9 @@ class TestAusNet(unittest.TestCase):
         rrp = 139.92
         actual = convert(interval_time, tariff_code, rrp)
         self.assertAlmostEqual(actual, expected, places=0)
+
+    def test_nee11s_2026_27(self):
+        # Post-1-Jul-2026: NEE11S anytime rate drops 13.6472 → 13.4297 c/kWh
+        interval_time = datetime(2026, 7, 12, 10, 0, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'NEE11S', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 13.4297, places=2)

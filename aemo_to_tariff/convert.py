@@ -162,7 +162,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
     elif network == 'endeavour':
         return endeavour.get_daily_fee(tariff)
     elif network == 'ausnet':
-        return ausnet.get_daily_fee(tariff, annual_usage)
+        return ausnet.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     else:
         return 1
 
@@ -201,7 +201,7 @@ def calculate_demand_fee(network, tariff, demand_kw, days=30, interval_time=None
     elif network == 'victoria':
         return victoria.calculate_demand_fee(tariff, demand_kw, days)
     elif network == 'ausnet':
-        return ausnet.calculate_demand_fee(tariff, demand_kw, days)
+        return ausnet.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'essential':
         return essential.calculate_demand_fee(tariff, demand_kw, days)
     else:
