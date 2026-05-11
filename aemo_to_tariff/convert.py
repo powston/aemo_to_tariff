@@ -141,7 +141,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
     elif network == 'ergon':
         return ergon.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     elif network == 'ausgrid':
-        return ausgrid.get_daily_fee(tariff, annual_usage)
+        return ausgrid.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     elif network == 'evoenergy':
         # Placeholder for Evoenergy daily fee calculation
         return 0.0
@@ -188,7 +188,7 @@ def calculate_demand_fee(network, tariff, demand_kw, days=30, interval_time=None
     elif network == 'ergon':
         return ergon.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'ausgrid':
-        return ausgrid.calculate_demand_fee(tariff, demand_kw, days)
+        return ausgrid.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'evoenergy':
         # Placeholder for Evoenergy demand fee calculation
         return 0.0
