@@ -17,3 +17,9 @@ class TestUnited(unittest.TestCase):
         expected_fee = 41.1
         fee = get_daily_fee(tariff_code)
         self.assertEqual(fee, expected_fee)
+
+    def test_convert_2026_27_peak(self):
+        # Post-1-Jul-2026 URTOU peak: 19.13 → 20.92 c/kWh
+        interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'URTOU', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 20.92, places=2)

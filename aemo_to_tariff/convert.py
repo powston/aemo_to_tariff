@@ -156,7 +156,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
     elif network == 'powercor':
         return powercor.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'united':
-        return united.get_daily_fee(tariff)
+        return united.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'jemena':
         return jemena.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'endeavour':
