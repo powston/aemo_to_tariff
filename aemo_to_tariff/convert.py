@@ -146,7 +146,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
         # Placeholder for Evoenergy daily fee calculation
         return 0.0
     elif network == 'sapn':
-        return sapower.get_daily_fee(tariff)
+        return sapower.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'tasnetworks':
         return tasnetworks.get_daily_fee(tariff)
     elif network == 'victoria':
@@ -193,7 +193,7 @@ def calculate_demand_fee(network, tariff, demand_kw, days=30, interval_time=None
         # Placeholder for Evoenergy demand fee calculation
         return 0.0
     elif network == 'sapn':
-        return sapower.calculate_demand_fee(tariff, demand_kw, days)
+        return sapower.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'tasnetworks':
         return tasnetworks.calculate_demand_fee(tariff, demand_kw, days)
     elif network == 'endeavour':

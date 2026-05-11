@@ -215,7 +215,13 @@ class TestSAPower(unittest.TestCase):
         interval_time = datetime(2025, 11, 11, 17, 5, tzinfo=ZoneInfo('Australia/Adelaide'))
         start_sell_price = sapower.convert_feed_in_tariff(interval_time, tariff_code, rrp)
         self.assertAlmostEqual(sell_price, start_sell_price, places=2)
-        
+
         # No demand fee here
         expected_demand_fee = sapower.estimate_demand_fee(interval_time, tariff_code, demand_kw=10)
         self.assertAlmostEqual(expected_demand_fee, 0, places=2)
+
+    def test_rtou_2026_27(self):
+        # Post-1-Jul-2026 RTOU peak: 18.95 → 21.33 c/kWh
+        interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo('Australia/Adelaide'))
+        price = sapower.convert(interval_time, 'RTOU', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 21.33, places=2)
