@@ -5,6 +5,19 @@ from zoneinfo import ZoneInfo
 def time_zone():
     return 'Australia/Sydney'
 
+# AER-approved prices change at the start of each financial year (1 July).
+# 2026–27 prices apply from 1 July 2026; before that, 2025–26 applies.
+PRICE_TRANSITION_DATE = datetime(2026, 7, 1, 0, 0, tzinfo=ZoneInfo('Australia/Sydney'))
+
+
+def _use_2026_prices(interval_time=None) -> bool:
+    if interval_time is None:
+        interval_time = datetime.now(tz=ZoneInfo(time_zone()))
+    if interval_time.tzinfo is None:
+        interval_time = interval_time.replace(tzinfo=ZoneInfo(time_zone()))
+    return interval_time >= PRICE_TRANSITION_DATE
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -25,17 +38,17 @@ def battery_tariffs(customer_type: str):
         raise ValueError("Invalid customer type. Must be 'Residential' or 'Business'.")
 
 
-# below reference page numbers are from this doc: https://www.endeavourenergy.com.au/__data/assets/pdf_file/0014/35024/NUOS-Price-List-202526-v1.1.pdf
-tariffs = {
+# 2025–26 reference: Endeavour NUOS Price List 2025-26 v1.1
+tariffs_2025_26 = {
     'N70': {
         'name': 'Residential Flat',
         'periods': [
             ('Anytime', time(0, 0), time(23, 59), 10.8173)
         ],
-        'fixed_daily_charge': 63.1270,  # see page 34 
+        'fixed_daily_charge': 63.1270,
     },
     'N71': {
-        'name': 'Residential Seasonal TOU', # 21.7964 13.8419 3.4252 10.4931
+        'name': 'Residential Seasonal TOU',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 21.7964),
             ('Low-season Peak', time(16, 0), time(20, 0),  13.8419),
@@ -44,8 +57,8 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 10.4931),
             ('Off Peak', time(20, 0), time(23, 59), 10.4931)
         ],
-        'fixed_daily_charge': 63.1270,  # see page 34 
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'fixed_daily_charge': 63.1270,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
     'N90': {
         'name': 'General Supply Block',
@@ -53,7 +66,7 @@ tariffs = {
             ('Block 1', time(0, 0), time(23, 59), 11.2803),
             ('Block 2', time(0, 0), time(23, 59), 13.5302)
         ],
-        'fixed_daily_charge': 88.8470,  # see page 34 
+        'fixed_daily_charge': 88.8470,
     },
     'N91': {
         'name': 'GS Seasonal TOU',
@@ -65,8 +78,8 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 12.1974),
             ('Off Peak', time(20, 0), time(23, 59), 12.1974)
         ],
-        'fixed_daily_charge': 88.8470,  # see page 34 
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'fixed_daily_charge': 88.8470,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
     'N19': {
         'name': 'LV Seasonal STOU Demand',
@@ -77,10 +90,10 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 3.6458),
             ('Off Peak', time(20, 0), time(23, 59), 3.6458)
         ],
-        'fixed_daily_charge': 2612.00,  # see page 34 
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'fixed_daily_charge': 2612.00,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
-    'N95': {  # below from page 34 of https://www.endeavourenergy.com.au/__data/assets/pdf_file/0014/35024/NUOS-Price-List-202526-v1.1.pdf
+    'N95': {
         'name': 'Storage',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 13.1329),
@@ -90,8 +103,8 @@ tariffs = {
             ('Off Peak', time(14, 0), time(16, 0), 1.8296),
             ('Off Peak', time(20, 0), time(23, 59), 1.8296)
         ],
-        'fixed_daily_charge': 161.1570,  # see page 34
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'fixed_daily_charge': 161.1570,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
     'N73': {
         'name': 'Residential Demand Transitional',
@@ -104,60 +117,213 @@ tariffs = {
     }
 }
 
-demand_charges = {
-    'N71': None,
-    'N91': None,
-    'N19': {
-        'Peak': 49.42,  # $/kW/day see page 34, low-season is 44.80
-        'Shoulder': 0.0,  # $/kW/day
-        'Off-Peak': 0.0  # $/kW/day
-    },
-    'N73': {
-        'Peak': 14.2700,  # c/kW/day high-season (Nov-Mar) - see page 34
-        'Peak_Low': 7.3800,  # c/kW/day low-season (Apr-Oct)
-        'Off-Peak': 0.0,  # c/kW/day
-        'Shoulder': 0.0  # c/kW/day
-    }
-}
-
-feed_in_tariffs = {
-    'N61': {
-        'name': 'Residential Electrify',
+# AER 2026–27 consolidated stakeholder report (8 May 2026).
+tariffs_2026_27 = {
+    'N70': {
+        'name': 'Residential Flat',
         'periods': [
-            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),  # inc GST - correct?
-            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),  # inc GST - correct?
-            ('Off Peak', time(10, 0), time(14, 0), -1.9690)  # inc GST - correct?
+            ('Anytime', time(0, 0), time(23, 59), 12.0348)
         ],
-        'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'fixed_daily_charge': 66.55,
+    },
+    'N71': {
+        'name': 'Residential Seasonal TOU',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 23.4471),
+            ('Low-season Peak', time(16, 0), time(20, 0), 15.2042),
+            ('Solar Soak', time(10, 0), time(14, 0), 4.5355),
+            ('Off Peak', time(0, 0), time(10, 0), 11.734),
+            ('Off Peak', time(14, 0), time(16, 0), 11.734),
+            ('Off Peak', time(20, 0), time(23, 59), 11.734)
+        ],
+        'fixed_daily_charge': 66.55,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    'N90': {
+        'name': 'General Supply Block',
+        'periods': [
+            ('Block 1', time(0, 0), time(23, 59), 12.5753),
+            ('Block 2', time(0, 0), time(23, 59), 15.0103)
+        ],
+        'fixed_daily_charge': 95.24,
+    },
+    'N91': {
+        'name': 'GS Seasonal TOU',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 25.1552),
+            ('Low-season Peak', time(16, 0), time(20, 0), 16.9123),
+            ('Solar Soak', time(10, 0), time(14, 0), 5.1696),
+            ('Off Peak', time(0, 0), time(10, 0), 13.4421),
+            ('Off Peak', time(14, 0), time(16, 0), 13.4421),
+            ('Off Peak', time(20, 0), time(23, 59), 13.4421)
+        ],
+        'fixed_daily_charge': 95.24,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    'N19': {
+        'name': 'LV Seasonal STOU Demand',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 6.1024),
+            ('Low-season Peak', time(16, 0), time(20, 0), 5.5284),
+            ('Off Peak', time(0, 0), time(10, 0), 4.2432),
+            ('Off Peak', time(14, 0), time(16, 0), 4.2432),
+            ('Off Peak', time(20, 0), time(23, 59), 4.2432)
+        ],
+        'fixed_daily_charge': 2414.00,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
     'N95': {
         'name': 'Storage',
         'periods': [
-            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),  # inc GST - correct?
-            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),  # inc GST - correct?
-            ('Off Peak', time(10, 0), time(14, 0), -1.9690)  # inc GST - correct?
+            ('High-season Peak', time(16, 0), time(20, 0), 13.7294),
+            ('Low-season Peak', time(16, 0), time(20, 0), 5.4865),
+            ('Solar Soak', time(10, 0), time(14, 0), 0.0),
+            ('Off Peak', time(0, 0), time(10, 0), 2.0163),
+            ('Off Peak', time(14, 0), time(16, 0), 2.0163),
+            ('Off Peak', time(20, 0), time(23, 59), 2.0163)
         ],
-        'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'fixed_daily_charge': 169.69,
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    'N73': {
+        'name': 'Residential Demand Transitional',
+        'periods': [
+            ('Solar Soak', time(10, 0), time(14, 0), 4.5355),
+            ('Off Peak', time(0, 0), time(10, 0), 10.906),
+            ('Off Peak', time(14, 0), time(23, 59), 10.906)
+        ],
+        'fixed_daily_charge': 66.55,
     }
 }
 
-def get_daily_fee(tariff_code: str):
+demand_charges_2025_26 = {
+    'N71': None,
+    'N91': None,
+    'N19': {
+        'Peak': 49.42,
+        'Shoulder': 0.0,
+        'Off-Peak': 0.0
+    },
+    'N73': {
+        'Peak': 14.2700,
+        'Peak_Low': 7.3800,
+        'Off-Peak': 0.0,
+        'Shoulder': 0.0
+    }
+}
+
+demand_charges_2026_27 = {
+    'N71': None,
+    'N91': None,
+    'N19': {
+        'Peak': 53.11,
+        'Peak_Low': 48.33,
+        'Shoulder': 0.0,
+        'Off-Peak': 0.0
+    },
+    'N72': {
+        'Peak': 18.18,
+        'Peak_Low': 9.27,
+        'Off-Peak': 0.0,
+        'Shoulder': 0.0
+    },
+    'N73': {
+        'Peak': 16.36,
+        'Peak_Low': 8.34,
+        'Off-Peak': 0.0,
+        'Shoulder': 0.0
+    },
+    'N92': {
+        'Peak': 24.18,
+        'Peak_Low': 11.92,
+        'Off-Peak': 0.0,
+        'Shoulder': 0.0
+    },
+    'N93': {
+        'Peak': 21.76,
+        'Peak_Low': 10.73,
+        'Off-Peak': 0.0,
+        'Shoulder': 0.0
+    },
+}
+
+feed_in_tariffs_2025_26 = {
+    'N61': {
+        'name': 'Residential Electrify',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),
+            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),
+            ('Off Peak', time(10, 0), time(14, 0), -1.9690)
+        ],
+        'weekdays': [0, 1, 2, 3, 4],
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    'N95': {
+        'name': 'Storage',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 12.4336),
+            ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),
+            ('Off Peak', time(10, 0), time(14, 0), -1.9690)
+        ],
+        'weekdays': [0, 1, 2, 3, 4],
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+}
+
+# AER 2026–27 export reward (col 21/22) — values stored as positive c/kWh added
+# to the spot price, matching the 2025–26 convention.
+feed_in_tariffs_2026_27 = {
+    'N61': {
+        'name': 'Residential Electrify',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 11.7131),
+            ('Low-season Peak', time(16, 0), time(20, 0), 3.4702),
+            ('Off Peak', time(10, 0), time(14, 0), -1.86)
+        ],
+        'weekdays': [0, 1, 2, 3, 4],
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    'N95': {
+        'name': 'Storage',
+        'periods': [
+            ('High-season Peak', time(16, 0), time(20, 0), 11.7131),
+            ('Low-season Peak', time(16, 0), time(20, 0), 3.4702),
+            ('Off Peak', time(10, 0), time(14, 0), -1.86)
+        ],
+        'weekdays': [0, 1, 2, 3, 4],
+        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+}
+
+
+def get_tariffs(interval_time=None):
+    return tariffs_2026_27 if _use_2026_prices(interval_time) else tariffs_2025_26
+
+
+def get_demand_charges(interval_time=None):
+    return demand_charges_2026_27 if _use_2026_prices(interval_time) else demand_charges_2025_26
+
+
+def get_feed_in_tariffs(interval_time=None):
+    return feed_in_tariffs_2026_27 if _use_2026_prices(interval_time) else feed_in_tariffs_2025_26
+
+
+def get_daily_fee(tariff_code: str, interval_time=None):
     """
     Get the daily fee for a given tariff.
 
     Parameters:
     - tariff_code (str): The tariff code.
+    - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
     - float: The daily fee in dollars.
     """
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
-    return 39.7300
+    return tariff.get('fixed_daily_charge', 0.0) / 100  # cents/day → $/day
 
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):
@@ -173,7 +339,8 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
     - float: The estimated demand fee in dollars.
     """
     time_of_day = interval_time.astimezone(ZoneInfo(time_zone())).time()
-    charge = demand_charges['N19']
+    demand_charges = get_demand_charges(interval_time)
+    charge = demand_charges.get('N19')
     if tariff_code in demand_charges:
         charge = demand_charges[tariff_code]
     if charge is None:
@@ -191,7 +358,7 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
 
     return charge_per_kw_per_month * demand_kw
 
-def calculate_demand_fee(tariff: str, demand_kw: float, days=30):
+def calculate_demand_fee(tariff: str, demand_kw: float, days=30, interval_time=None):
     """
     Calculate the demand fee for a given tariff, demand amount, and time period.
 
@@ -199,21 +366,22 @@ def calculate_demand_fee(tariff: str, demand_kw: float, days=30):
     - tariff (str): The tariff code.
     - demand_kw (float): The maximum demand in kW (or kVA for some tariffs).
     - days (int): The number of days for the billing period (default is 30).
+    - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
     - float: The demand fee in dollars.
     """
-    tariff = tariffs[tariff]
+    tariff_data = get_tariffs(interval_time)[tariff]
 
     # Find the applicable rate
-    for period, start, end, rate in tariff['periods']:
+    for period, start, end, rate in tariff_data['periods']:
         if start <= demand_kw < end:
             return rate * days
 
     raise ValueError(f"Unknown demand amount: {demand_kw}")
 
-def get_periods(tariff_code: str):
-    tariff = tariffs.get(tariff_code)
+def get_periods(tariff_code: str, interval_time=None):
+    tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
@@ -221,7 +389,7 @@ def get_periods(tariff_code: str):
 
 def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
-    Convert RRP from $/MWh to c/kWh for SA Power Networks.
+    Convert RRP from $/MWh to c/kWh including any feed-in tariff adjustment.
 
     Parameters:
     - interval_datetime (datetime): The interval datetime.
@@ -233,7 +401,8 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     """
     rrp_c_kwh = rrp / 10
     interval_datetime = interval_datetime - timedelta(minutes=5)
-    
+    feed_in_tariffs = get_feed_in_tariffs(interval_datetime)
+
     if tariff_code in feed_in_tariffs:
         interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
         tariff = feed_in_tariffs[tariff_code]
@@ -254,8 +423,7 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
                 elif 'off' in period.lower():
                     total_price = rrp_c_kwh + rate
                     return total_price
-    
-    
+
     return rrp_c_kwh
 
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
@@ -273,7 +441,7 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     interval_datetime = interval_datetime - timedelta(minutes=5)
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
     rrp_c_kwh = rrp / 10
-    tariff = tariffs[tariff_code]
+    tariff = get_tariffs(interval_datetime)[tariff_code]
 
     # Determine if it's high season (November to March) or low season (April to October)
     current_month = interval_datetime.month

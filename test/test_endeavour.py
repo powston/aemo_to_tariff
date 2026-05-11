@@ -96,3 +96,9 @@ class TestEndeavour(unittest.TestCase):
         rrp = 100.0
         with self.assertRaises(KeyError):
             convert(interval_time, tariff_code, rrp)
+
+    def test_convert_2026_27_high_season_peak(self):
+        # Post-transition N71 high-season peak: 21.7964 → 23.4471 c/kWh
+        interval_time = datetime(2027, 1, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'N71', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 23.4471, places=4)
