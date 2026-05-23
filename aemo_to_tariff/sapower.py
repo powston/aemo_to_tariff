@@ -1,6 +1,9 @@
 # aemo_to_tariff/sapower.py
+import logging
 from datetime import time, datetime, timedelta
 from zoneinfo import ZoneInfo
+
+_logger = logging.getLogger(__name__)
 
 def time_zone():
     return 'Australia/Adelaide'
@@ -250,7 +253,7 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
     interval_datetime = interval_datetime - timedelta(minutes=5)
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
-    print('Interval Time:', interval_datetime, '->', interval_time, 'Tariff Code:', tariff_code, 'RRP:', rrp)
+    _logger.debug("Interval Time: %s -> %s Tariff Code: %s RRP: %s", interval_datetime, interval_time, tariff_code, rrp)
     rrp_c_kwh = rrp / 10
 
     tariff = tariffs.get(tariff_code)
@@ -269,12 +272,12 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
                 continue  # Skip period if not in applicable months
             default_tariff = rrp_c_kwh + rate
         elif start <= interval_time < end or (start > end and (interval_time >= start or interval_time < end)):
-            print('Checking period:', period, 'Start:', start, 'End:', end, 'Months:', months, 'Rate:', rate)
-            print('Current month:', current_month, 'Interval time:', interval_time)
+            _logger.debug("Checking period: %s Start: %s End: %s Months: %s Rate: %s", period, start, end, months, rate)
+            _logger.debug("Current month: %s Interval time: %s", current_month, interval_time)
             if months and current_month not in months:
                 continue  # Skip period if not in applicable months
             total_price = rrp_c_kwh + rate
-            print('Found tariff match:', period, 'in tariff code:', tariff_code, rate, 'Total Price:', total_price)
+            _logger.debug("Found tariff match: %s in tariff code: %s %s Total Price: %s", period, tariff_code, rate, total_price)
             return total_price
 
     # If no period is found, use the first rate as default
