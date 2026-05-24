@@ -137,3 +137,22 @@ class TestEndeavour(unittest.TestCase):
         interval_time = datetime(2025, 7, 14, 11, 30, tzinfo=ZoneInfo(time_zone()))
         price = convert(interval_time, 'N71', 22.0)
         self.assertAlmostEqual(price, 2.2 + 3.4252, places=2)
+
+    def test_N19_solar_soak_zero_energy(self):
+        # Regression: N19 LV demand previously had no period covering 10–14, so
+        # midday lookups fell through to the slope/intercept default. The AER
+        # 2025–26 schedule has no Solar Soak energy charge (blank column); we
+        # model it as an explicit Solar Soak period at rate 0.
+        interval_time = datetime(2025, 9, 1, 11, 30, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'N19', 22.0)
+        self.assertAlmostEqual(price, 2.2 + 0.0, places=2)
+
+    def test_N95_seasonality(self):
+        # Regression: N95 'Storage' has seasonal periods but its tariff name
+        # doesn't contain 'season', which previously caused the convert() loop
+        # to fall back to the simple "first matching period" branch and apply
+        # the HS rate year-round. Verify HS rate in Jan, LS rate in Jul.
+        hs = datetime(2026, 1, 14, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        ls = datetime(2025, 7, 14, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(hs, 'N95', 0.0), 13.1329, places=4)
+        self.assertAlmostEqual(convert(ls, 'N95', 0.0), 5.1784, places=4)

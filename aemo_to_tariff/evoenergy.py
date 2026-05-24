@@ -39,9 +39,15 @@ def battery_tariffs(customer_type: str):
 tariffs_2025_26 = {
     '015': {
         'name': 'Residential TOU Network (closed)',
+        # Peak applies only in peak_months. In shoulder months (Apr/May/Sep/Oct)
+        # the 7–9 and 17–20 windows become shoulder, so duplicate Shoulder
+        # entries are listed at those times — Peak is checked first and wins
+        # during peak months because periods are evaluated in order.
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 16.095),
             ('Peak', time(17, 0), time(20, 0), 16.095),
+            ('Shoulder', time(7, 0), time(9, 0), 8.199),
+            ('Shoulder', time(17, 0), time(20, 0), 8.199),
             ('Shoulder', time(9, 0), time(17, 0), 8.199),
             ('Shoulder', time(20, 0), time(22, 0), 8.199),
             ('Off-peak', time(22, 0), time(7, 0), 4.828)
@@ -53,6 +59,8 @@ tariffs_2025_26 = {
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 16.095),
             ('Peak', time(17, 0), time(20, 0), 16.095),
+            ('Shoulder', time(7, 0), time(9, 0), 8.199),
+            ('Shoulder', time(17, 0), time(20, 0), 8.199),
             ('Shoulder', time(9, 0), time(17, 0), 8.199),
             ('Shoulder', time(20, 0), time(22, 0), 8.199),
             ('Off-peak', time(22, 0), time(7, 0), 4.828)
@@ -74,9 +82,14 @@ tariffs_2025_26 = {
     },
     '018': {
         'name': 'New Residential TOU Network XMC',
+        # In shoulder months Peak is skipped; the duplicate Off-peak entries at
+        # 7–9 and 17–21 prevent fall-through. (AER 2026–27 lists no separate
+        # shoulder rate for this tariff, so peak windows revert to off-peak.)
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 16.184),
             ('Peak', time(17, 0), time(21, 0), 16.184),
+            ('Off-peak', time(7, 0), time(9, 0), 5.665),
+            ('Off-peak', time(17, 0), time(21, 0), 5.665),
             ('Solar Soak', time(11, 0), time(15, 0), 3.261),
             ('Off-peak', time(21, 0), time(7, 0), 5.665),
             ('Off-peak', time(9, 0), time(11, 0), 5.665),
@@ -90,6 +103,8 @@ tariffs_2025_26 = {
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 16.184),
             ('Peak', time(17, 0), time(21, 0), 16.184),
+            ('Off-peak', time(7, 0), time(9, 0), 5.665),
+            ('Off-peak', time(17, 0), time(21, 0), 5.665),
             ('Solar Soak', time(11, 0), time(15, 0), 3.261),
             ('Off-peak', time(21, 0), time(7, 0), 5.665),
             ('Off-peak', time(9, 0), time(11, 0), 5.665),
@@ -116,6 +131,8 @@ tariffs_2026_27 = {
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 15.877),
             ('Peak', time(17, 0), time(20, 0), 15.877),
+            ('Shoulder', time(7, 0), time(9, 0), 7.030),
+            ('Shoulder', time(17, 0), time(20, 0), 7.030),
             ('Shoulder', time(9, 0), time(17, 0), 7.030),
             ('Shoulder', time(20, 0), time(22, 0), 7.030),
             ('Off-peak', time(22, 0), time(7, 0), 3.442)
@@ -127,6 +144,8 @@ tariffs_2026_27 = {
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 15.877),
             ('Peak', time(17, 0), time(20, 0), 15.877),
+            ('Shoulder', time(7, 0), time(9, 0), 7.030),
+            ('Shoulder', time(17, 0), time(20, 0), 7.030),
             ('Shoulder', time(9, 0), time(17, 0), 7.030),
             ('Shoulder', time(20, 0), time(22, 0), 7.030),
             ('Off-peak', time(22, 0), time(7, 0), 3.442)
@@ -151,6 +170,8 @@ tariffs_2026_27 = {
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 16.049),
             ('Peak', time(17, 0), time(21, 0), 16.049),
+            ('Off-peak', time(7, 0), time(9, 0), 4.351),
+            ('Off-peak', time(17, 0), time(21, 0), 4.351),
             ('Solar Soak', time(11, 0), time(15, 0), 1.779),
             ('Off-peak', time(21, 0), time(7, 0), 4.351),
             ('Off-peak', time(9, 0), time(11, 0), 4.351),
@@ -164,6 +185,8 @@ tariffs_2026_27 = {
         'periods': [
             ('Peak', time(7, 0), time(9, 0), 16.049),
             ('Peak', time(17, 0), time(21, 0), 16.049),
+            ('Off-peak', time(7, 0), time(9, 0), 3.534),
+            ('Off-peak', time(17, 0), time(21, 0), 3.534),
             ('Solar Soak', time(11, 0), time(15, 0), 1.630),
             ('Off-peak', time(21, 0), time(7, 0), 3.534),
             ('Off-peak', time(9, 0), time(11, 0), 3.534),
@@ -298,7 +321,11 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     rrp_c_kwh = rrp / 10
     tariff = get_tariffs(interval_datetime)[tariff_code]
     gst = 1.1
-    is_peak_month = current_month in tariff.get('peak_months', [])
+    # Tariffs that don't declare 'peak_months' have non-seasonal peaks (e.g.
+    # tariff 090 General Component Charge Applicability). Only skip the Peak
+    # period when the tariff explicitly restricts it to certain months.
+    peak_months = tariff.get('peak_months')
+    is_peak_month = peak_months is None or current_month in peak_months
 
     # Find the applicable period and rate
     for period_name, start, end, rate in tariff['periods']:
@@ -341,7 +368,8 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
         return rrp_c_kwh
 
     current_month = interval_datetime.month
-    is_peak_month = current_month in feed_in_tariff.get('peak_months', [])
+    peak_months = feed_in_tariff.get('peak_months')
+    is_peak_month = peak_months is None or current_month in peak_months
 
     for period_name, start, end, rate in feed_in_tariff['periods']:
         if period_name == 'Peak' and not is_peak_month:
