@@ -5,6 +5,19 @@ from zoneinfo import ZoneInfo
 def time_zone():
     return 'Australia/Sydney'
 
+# AER-approved prices change at the start of each financial year (1 July).
+# 2026–27 prices apply from 1 July 2026; before that, 2025–26 applies.
+PRICE_TRANSITION_DATE = datetime(2026, 7, 1, 0, 0, tzinfo=ZoneInfo('Australia/Sydney'))
+
+
+def _use_2026_prices(interval_time=None) -> bool:
+    if interval_time is None:
+        interval_time = datetime.now(tz=ZoneInfo(time_zone()))
+    if interval_time.tzinfo is None:
+        interval_time = interval_time.replace(tzinfo=ZoneInfo(time_zone()))
+    return interval_time >= PRICE_TRANSITION_DATE
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -20,12 +33,12 @@ def battery_tariffs(customer_type: str):
     elif customer_type.lower() == 'business':
         return {'import': ['BLNT2AL'], 'export': ['BLNBEX1']}
 
-# BLNREX2 is a feed-in tariff, not a TOU tariff. -11.5725 - 0.8172
-feed_in_tariffs = {
+
+feed_in_tariffs_2025_26 = {
     'BLNREX2': {
         'name': 'LV Residential Solar Export',
         'periods': [
-            ('Peak', time(17, 0), time(19, 59), 11.5725 ),
+            ('Peak', time(17, 0), time(19, 59), 11.5725),
             ('Solar Soaker', time(10, 0), time(14, 59), -0.8172)
         ]
     },
@@ -38,21 +51,33 @@ feed_in_tariffs = {
     }
 }
 
-tariffs = {
-    # ------------------------------
-    # Residential Anytime (Flat)
-    # ------------------------------
+# AER 2026–27: residential export rebate 11.7212 c/kWh (peak), export
+# consumption >7.5 kWh +0.8277 c/kWh (solar soak); business rebate 12.2425.
+feed_in_tariffs_2026_27 = {
+    'BLNREX2': {
+        'name': 'LV Residential Solar Export',
+        'periods': [
+            ('Peak', time(17, 0), time(19, 59), 11.7212),
+            ('Solar Soaker', time(10, 0), time(14, 59), -0.8277)
+        ]
+    },
+    'BLNBEX1': {
+        'name': 'LV Residential Business Solar Export',
+        'periods': [
+            ('Peak', time(16, 0), time(20, 0), 12.2425),
+            ('Off Peak', time(0, 0), time(10, 0), -0.8277)
+        ]
+    }
+}
+
+
+tariffs_2025_26 = {
     'BLNN2AU': {
         'name': 'LV Residential Anytime',
         'periods': [
-            ('Anytime', time(0, 0), time(23, 59), 12.6808),  # c/kWh
+            ('Anytime', time(0, 0), time(23, 59), 12.6808),
         ]
     },
-
-    # ---------------------------------------------------
-    # LV Residential TOU (Basic Meter) - Legacy
-    # Peak windows: 7–9am, 5–8pm; Shoulder: 9am–5pm, 8–10pm; Off-peak: 10pm–7am
-    # ---------------------------------------------------
     'BLNT3AU': {
         'name': 'LV Residential TOU (Basic Meter)',
         'periods': [
@@ -63,11 +88,6 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 5.4026),
         ]
     },
-
-    # -----------------------------------------------------
-    # LV Residential TOU (Interval Meter) - Legacy
-    # Peak: 5–8pm; Shoulder: 7am–5pm, 8–10pm; Off-peak: 10pm–7am
-    # -----------------------------------------------------
     'BLNT3AL': {
         'name': 'LV Residential TOU (Interval Meter)',
         'periods': [
@@ -77,28 +97,16 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 5.4026),
         ]
     },
-
-    # ------------------------------------------------------
-    # LV Residential TOU – Sun Soaker
-    # Peak: 3–10pm weekdays; Off-Peak: all other times
-    # (No shoulder in this simpler design)
-    # ------------------------------------------------------
     'BLNRSS2': {
         'name': 'LV Residential Sun Soaker',
         'periods': [
-            ('Peak', time(7, 0), time(9, 59), 16.9522 ),
-            ('Peak', time(15, 0), time(21, 59), 16.9522 ),
+            ('Peak', time(7, 0), time(9, 59), 16.9522),
+            ('Peak', time(15, 0), time(21, 59), 16.9522),
             ('Off-Peak', time(0, 0), time(6, 59), 5.8530),
             ('Off-Peak', time(10, 0), time(14, 59), 5.8530),
             ('Off-Peak', time(22, 0), time(23, 59), 5.8530),
         ]
     },
-
-    # ------------------------------------------------------
-    # LV Residential Demand (Opt-in)
-    # Usage rates: Peak 8.8434, Shoulder 5.9050, Off-Peak 3.5188
-    # Peak window: 5–8pm
-    # ------------------------------------------------------
     'BLND1AR': {
         'name': 'LV Residential Demand',
         'periods': [
@@ -108,41 +116,24 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 3.5188),
         ]
     },
-
-    # ------------------------------------------------------
-    # Controlled Load 1 (restricted ~5–9 hours supply)
-    # ------------------------------------------------------
     'BLNC1AU': {
         'name': 'Controlled Load 1',
         'periods': [
             ('Controlled Load 1', time(0, 0), time(23, 59), 2.7130),
         ]
     },
-
-    # ------------------------------------------------------
-    # Controlled Load 2 (restricted ~10–19 hours supply)
-    # ------------------------------------------------------
     'BLNC2AU': {
         'name': 'Controlled Load 2',
         'periods': [
             ('Controlled Load 2', time(0, 0), time(23, 59), 5.7748),
         ]
     },
-
-    # -------------------------------
-    # Small Business Anytime (Flat)
-    # -------------------------------
     'BLNN1AU': {
         'name': 'LV Small Business Anytime',
         'periods': [
             ('Anytime', time(0, 0), time(23, 59), 17.4231),
         ]
     },
-
-    # --------------------------------------------------------
-    # LV Small Business TOU (Basic Meter) - Legacy
-    # Peak: 7–9am, 5–8pm; Shoulder: 9am–5pm, 8–10pm; Off-Peak: 10pm–7am
-    # --------------------------------------------------------
     'BLNT2AU': {
         'name': 'LV Small Business TOU (Basic Meter)',
         'periods': [
@@ -153,11 +144,6 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 7.8256),
         ]
     },
-
-    # --------------------------------------------------------
-    # LV Small Business TOU (Interval Meter) - Legacy
-    # Peak: 5–8pm; Shoulder: 7am–5pm, 8–10pm; Off-Peak: 10pm–7am
-    # --------------------------------------------------------
     'BLNT2AL': {
         'name': 'LV Small Business TOU (Interval Meter)',
         'periods': [
@@ -167,11 +153,6 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 7.5707),
         ]
     },
-
-    # --------------------------------------------------------
-    # LV Small Business TOU (100–160 MWh) - Legacy
-    # Peak: 5–8pm; Shoulder: 7am–5pm, 8–10pm; Off-Peak: 10pm–7am
-    # --------------------------------------------------------
     'BLNT1AO': {
         'name': 'LV Small Business TOU (100–160 MWh)',
         'periods': [
@@ -181,23 +162,6 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 7.8256),
         ]
     },
-
-    # ------------------------------------------------------
-    # LV Small Business TOU – Sun Soaker
-    # Peak: 3–10pm; Off-Peak: all other times
-    # ------------------------------------------------------
-    'BLNBSS1': {
-        'name': 'LV Small Business Sun Soaker',
-        'periods': [
-            ('Peak', time(15, 0), time(22, 0), 16.8466),
-            ('Off-Peak', time(22, 0), time(15, 0), 7.5707),
-        ]
-    },
-
-    # ------------------------------------------------------
-    # LV Small Business Demand (Opt-in)
-    # Usage Rates: Peak 12.3583, Shoulder 8.6714, Off-Peak 5.1286
-    # ------------------------------------------------------
     'BLND1AB': {
         'name': 'LV Small Business Demand',
         'periods': [
@@ -207,11 +171,6 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 5.1286),
         ]
     },
-
-    # -----------------------------------------------------
-    # BLNBSS1 LV Small Business ToU - Sun Soaker 
-    # Peak: 5–8pm; Shoulder: 7am–5pm, 8–10pm; Off-peak: 10pm–7am
-    # -----------------------------------------------------
     'BLNBSS1': {
         'name': 'LV Small Business TOU - Sun Soaker',
         'periods': [
@@ -219,46 +178,120 @@ tariffs = {
             ('Off-Peak', time(22, 0), time(7, 0), 8.1015),
         ]
     },
+}
 
+# AER 2026–27 consolidated stakeholder report (8 May 2026).
+tariffs_2026_27 = {
+    'BLNN2AU': {
+        'name': 'LV Residential Anytime',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 14.5489),
+        ]
+    },
+    'BLNT3AU': {
+        'name': 'LV Residential TOU (Basic Meter)',
+        'periods': [
+            ('Peak', time(7, 0), time(9, 0), 20.5470),
+            ('Shoulder', time(9, 0), time(17, 0), 15.9751),
+            ('Peak', time(17, 0), time(20, 0), 20.5470),
+            ('Shoulder', time(20, 0), time(22, 0), 15.9751),
+            ('Off-Peak', time(22, 0), time(7, 0), 6.4301),
+        ]
+    },
+    'BLNT3AL': {
+        'name': 'LV Residential TOU (Interval Meter)',
+        'periods': [
+            ('Shoulder', time(7, 0), time(17, 0), 15.1672),
+            ('Peak', time(17, 0), time(20, 0), 20.9051),
+            ('Shoulder', time(20, 0), time(22, 0), 15.1672),
+            ('Off-Peak', time(22, 0), time(7, 0), 6.3486),
+        ]
+    },
+    'BLNRSS2': {
+        'name': 'LV Residential Sun Soaker',
+        'periods': [
+            ('Peak', time(7, 0), time(9, 59), 17.9566),
+            ('Peak', time(15, 0), time(21, 59), 17.9566),
+            ('Off-Peak', time(0, 0), time(6, 59), 6.3275),
+            ('Off-Peak', time(10, 0), time(14, 59), 6.3275),
+            ('Off-Peak', time(22, 0), time(23, 59), 6.3275),
+        ]
+    },
+    'BLND1AR': {
+        'name': 'LV Residential Demand',
+        'periods': [
+            ('Shoulder', time(7, 0), time(17, 0), 7.3713),
+            ('Peak', time(17, 0), time(20, 0), 10.8399),
+            ('Shoulder', time(20, 0), time(22, 0), 7.3713),
+            ('Off-Peak', time(22, 0), time(7, 0), 4.3811),
+        ]
+    },
+    'BLNC1AU': {
+        'name': 'Controlled Load 1',
+        'periods': [
+            ('Controlled Load 1', time(0, 0), time(23, 59), 3.5046),
+        ]
+    },
+    'BLNC2AU': {
+        'name': 'Controlled Load 2',
+        'periods': [
+            ('Controlled Load 2', time(0, 0), time(23, 59), 7.0007),
+        ]
+    },
+    'BLNN1AU': {
+        'name': 'LV Small Business Anytime',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 19.6765),
+        ]
+    },
+    'BLNT2AU': {
+        'name': 'LV Small Business TOU (Basic Meter)',
+        'periods': [
+            ('Peak', time(7, 0), time(9, 0), 21.6514),
+            ('Shoulder', time(9, 0), time(17, 0), 16.9328),
+            ('Peak', time(17, 0), time(20, 0), 21.6514),
+            ('Shoulder', time(20, 0), time(22, 0), 16.9328),
+            ('Off-Peak', time(22, 0), time(7, 0), 9.0349),
+        ]
+    },
+    'BLNT2AL': {
+        'name': 'LV Small Business TOU (Interval Meter)',
+        'periods': [
+            ('Shoulder', time(7, 0), time(17, 0), 16.0890),
+            ('Peak', time(17, 0), time(20, 0), 22.0254),
+            ('Shoulder', time(20, 0), time(22, 0), 16.0890),
+            ('Off-Peak', time(22, 0), time(7, 0), 8.6314),
+        ]
+    },
+    'BLNT1AO': {
+        'name': 'LV Small Business TOU (100–160 MWh)',
+        'periods': [
+            ('Shoulder', time(7, 0), time(17, 0), 16.9328),
+            ('Peak', time(17, 0), time(20, 0), 21.6514),
+            ('Shoulder', time(20, 0), time(22, 0), 16.9328),
+            ('Off-Peak', time(22, 0), time(7, 0), 9.0349),
+        ]
+    },
+    'BLND1AB': {
+        'name': 'LV Small Business Demand',
+        'periods': [
+            ('Shoulder', time(7, 0), time(17, 0), 8.6714),
+            ('Peak', time(17, 0), time(20, 0), 12.3583),
+            ('Shoulder', time(20, 0), time(22, 0), 8.6714),
+            ('Off-Peak', time(22, 0), time(7, 0), 5.1286),
+        ]
+    },
+    'BLNBSS1': {
+        'name': 'LV Small Business TOU - Sun Soaker',
+        'periods': [
+            ('Peak', time(15, 0), time(22, 0), 18.9741),
+            ('Off-Peak', time(22, 0), time(15, 0), 8.5988),
+        ]
+    },
 }
 
 
-def get_periods(tariff_code: str):
-    """
-    Retrieve the list of TOU periods for the given tariff code.
-    Each period is (period_name, start_time, end_time, rate_cents_kwh).
-    """
-    tariff = tariffs.get(tariff_code)
-    if not tariff:
-        raise ValueError(f"Unknown tariff code: {tariff_code}")
-    return tariff['periods']
-
-def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
-    """
-    Convert RRP from $/MWh to c/kWh for SA Power Networks.
-
-    Parameters:
-    - interval_datetime (datetime): The interval datetime.
-    - tariff_code (str): The tariff code.
-    - rrp (float): The Regional Reference Price in $/MWh.
-
-    Returns:
-    - float: The price in c/kWh.
-    """
-    interval_datetime = interval_datetime - timedelta(minutes=5)
-    local_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
-    rrp_c_kwh = rrp / 10
-    tariff = feed_in_tariffs.get(tariff_code, {})
-    if not tariff:
-        return rrp_c_kwh  # Fallback if unknown tariff code
-    for period, start, end, rate in tariff['periods']:
-        if start <= local_time < end:
-            total_price = rrp_c_kwh + rate
-            return total_price
-    return rrp_c_kwh  # Fallback if no specific feed-in tariff found
-
-# Daily fees in dollars per day
-daily_fees = {
+daily_fees_2025_26 = {
     'BLNN2AU': 1.2788,
     'BLNT3AU': 1.2788,
     'BLNT3AL': 1.2788,
@@ -274,23 +307,92 @@ daily_fees = {
     'BLND1AB': 2.0579,
 }
 
-# Demand charges in dollars per kW per day (approx. conversions from $/kVA/month)
-demand_charges = {
-    'BLNRSS2': None,
-    'BLNRSS2': None,
-    'BLND1AR': {'peak': 8.998},  # ~4.77 $/kVA/month => ~$0.16 /kW/day
-    'BLND1AB': {'peak': 8.998},  # ~8.92 $/kVA/month => ~$0.30 /kW/day
+# AER 2026–27: residential $473.36/year ≈ $1.2969/day, business
+# $804.77/year ≈ $2.2049/day, controlled $48.85/year ≈ $0.1339/day.
+daily_fees_2026_27 = {
+    'BLNN2AU': 1.2969,
+    'BLNT3AU': 1.2969,
+    'BLNT3AL': 1.2969,
+    'BLNRSS2': 1.2969,
+    'BLND1AR': 1.2969,
+    'BLNC1AU': 0.1338,
+    'BLNC2AU': 0.1338,
+    'BLNN1AU': 2.2049,
+    'BLNT2AU': 2.2049,
+    'BLNT2AL': 2.2049,
+    'BLNT1AO': 2.2049,
+    'BLNBSS1': 2.2049,
+    'BLND1AB': 2.2049,
 }
 
-def get_periods(tariff_code: str):
+
+demand_charges_2025_26 = {
+    'BLNRSS2': None,
+    'BLND1AR': {'peak': 8.998},
+    'BLND1AB': {'peak': 8.998},
+}
+
+# AER 2026–27 demand: BLND1AR peak demand 5.193 $/kVA (col 13).
+# BLND1AB (LV Small Business Demand) not separately rated in 2026–27 spreadsheet;
+# preserved from 2025–26.
+demand_charges_2026_27 = {
+    'BLNRSS2': None,
+    'BLND1AR': {'peak': 5.193},
+    'BLND1AB': {'peak': 8.998},
+}
+
+
+def get_tariffs(interval_time=None):
+    return tariffs_2026_27 if _use_2026_prices(interval_time) else tariffs_2025_26
+
+
+def get_feed_in_tariffs(interval_time=None):
+    return feed_in_tariffs_2026_27 if _use_2026_prices(interval_time) else feed_in_tariffs_2025_26
+
+
+def get_daily_fees(interval_time=None):
+    return daily_fees_2026_27 if _use_2026_prices(interval_time) else daily_fees_2025_26
+
+
+def get_demand_charges(interval_time=None):
+    return demand_charges_2026_27 if _use_2026_prices(interval_time) else demand_charges_2025_26
+
+
+def get_periods(tariff_code: str, interval_time=None):
     """
     Retrieve the list of TOU periods for the given tariff code.
     Each period is (period_name, start_time, end_time, rate_cents_kwh).
     """
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
     return tariff['periods']
+
+def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
+    """
+    Convert RRP from $/MWh to c/kWh including any feed-in adjustment.
+
+    Parameters:
+    - interval_datetime (datetime): The interval datetime.
+    - tariff_code (str): The tariff code.
+    - rrp (float): The Regional Reference Price in $/MWh.
+
+    Returns:
+    - float: The price in c/kWh.
+    """
+    interval_datetime = interval_datetime - timedelta(minutes=5)
+    local_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
+    rrp_c_kwh = rrp / 10
+    feed_in_tariffs = get_feed_in_tariffs(interval_datetime)
+    tariff = feed_in_tariffs.get(tariff_code, {})
+    if not tariff:
+        return rrp_c_kwh  # Fallback if unknown tariff code
+    for period, start, end, rate in tariff['periods']:
+        if start <= local_time < end:
+            total_price = rrp_c_kwh + rate
+            return total_price
+    return rrp_c_kwh  # Fallback if no specific feed-in tariff found
+
 
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
     """
@@ -309,7 +411,7 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
     local_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
     rrp_c_kwh = rrp / 10.0  # $/MWh => c/kWh
 
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_datetime).get(tariff_code)
     if not tariff:
         # Fallback if unknown tariff code
         slope = 1.037869032618134
@@ -330,11 +432,11 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
     # Default to first period’s rate if none matched
     return rrp_c_kwh + tariff['periods'][0][3]
 
-def get_daily_fee(tariff_code: str) -> float:
+def get_daily_fee(tariff_code: str, interval_time=None) -> float:
     """
     Get the daily fixed fee for the given tariff code (in dollars per day).
     """
-    return daily_fees.get(tariff_code, 0.0)
+    return get_daily_fees(interval_time).get(tariff_code, 0.0)
 
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):
@@ -350,8 +452,9 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
     - float: The estimated demand fee in dollars.
     """
     time_of_day = interval_time.astimezone(ZoneInfo(time_zone())).time()
-    
-    charge = demand_charges['BLND1AR']
+    demand_charges = get_demand_charges(interval_time)
+
+    charge = demand_charges.get('BLND1AR')
     if tariff_code in demand_charges:
         charge = demand_charges[tariff_code]
     if charge is None:
@@ -369,12 +472,13 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
 
     return charge_per_kw_per_month * demand_kw
 
-def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='Peak') -> float:
+def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='Peak', interval_time=None) -> float:
     """
     Calculate the demand charge for a given tariff code, maximum demand (kW), and billing period (days).
 
     Returns:
     - float: The demand fee in dollars (i.e. demand_charge $/kW/day * demand_kw * days).
     """
+    demand_charges = get_demand_charges(interval_time)
     daily_charge = demand_charges.get(tariff_code, {}).get(tou.lower(), 0.0)
     return daily_charge * demand_kw * days

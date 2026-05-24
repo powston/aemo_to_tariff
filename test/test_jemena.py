@@ -19,3 +19,9 @@ class TestJemena(unittest.TestCase):
         expected_fee = 1.2
         fee = get_daily_fee(tariff_code)
         self.assertEqual(fee, expected_fee)
+
+    def test_convert_2026_27_peak(self):
+        # Post-1-Jul-2026 PRTOU peak: 18.34 → 18.208 c/kWh
+        interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'PRTOU', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 18.208, places=2)

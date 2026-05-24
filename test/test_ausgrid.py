@@ -63,3 +63,9 @@ class TestAusgrid(unittest.TestCase):
         price = convert(interval_time, tariff_code, rrp)
         loss_factor = expected_price / price
         self.assertAlmostEqual(price * 1.12, expected_price, places=1)
+
+    def test_ea_025_peak_2026_27(self):
+        # Post-1-Jul-2026: peak rate 29.245 → 32.5164
+        interval_time = datetime(2026, 7, 22, 17, 45, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'EA025', 136.7)
+        self.assertAlmostEqual(price, 13.67 + 32.5164, places=2)

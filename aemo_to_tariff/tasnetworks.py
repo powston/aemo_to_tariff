@@ -5,6 +5,19 @@ from zoneinfo import ZoneInfo
 def time_zone():
     return 'Australia/Hobart'
 
+# AER-approved prices change at the start of each financial year (1 July).
+# 2026–27 prices apply from 1 July 2026; before that, 2025–26 applies.
+PRICE_TRANSITION_DATE = datetime(2026, 7, 1, 0, 0, tzinfo=ZoneInfo('Australia/Hobart'))
+
+
+def _use_2026_prices(interval_time=None) -> bool:
+    if interval_time is None:
+        interval_time = datetime.now(tz=ZoneInfo(time_zone()))
+    if interval_time.tzinfo is None:
+        interval_time = interval_time.replace(tzinfo=ZoneInfo(time_zone()))
+    return interval_time >= PRICE_TRANSITION_DATE
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -22,7 +35,8 @@ def battery_tariffs(customer_type: str):
     else:
         raise ValueError("Invalid customer type. Must be 'Residential' or 'Business'.")
 
-tariffs = {
+
+tariffs_2025_26 = {
     'TAS93': {
         'name': 'Residential time of use consumption',
         'periods': [
@@ -57,7 +71,7 @@ tariffs = {
             ('Peak', time(7, 0), time(22, 0), 16.784),
             ('Shoulder', time(22, 0), time(23, 59), 9.886),
             ('Shoulder', time(0, 0), time(7, 0), 9.886),
-            ('Off-peak', time(0, 0), time(23, 59), 2.426),  # Applies on weekends
+            ('Off-peak', time(0, 0), time(23, 59), 2.426),
         ]
     },
     'TAS88': {
@@ -69,7 +83,68 @@ tariffs = {
     },
 }
 
-demand_charges = {
+# AER 2026–27 consolidated stakeholder report (8 May 2026).
+tariffs_2026_27 = {
+    'TAS93': {
+        'name': 'Residential time of use consumption',
+        'periods': [
+            ('Peak', time(7, 0), time(10, 0), 19.860),
+            ('Peak', time(16, 0), time(21, 0), 19.860),
+            ('Off-peak', time(21, 0), time(7, 0), 4.369),
+            ('Off-peak', time(10, 0), time(16, 0), 4.369),
+        ]
+    },
+    'TAS87': {
+        'name': 'Residential time of use demand',
+        'periods': [
+            ('Peak', time(7, 0), time(10, 0), 34.772),
+            ('Peak', time(16, 0), time(21, 0), 34.772),
+            ('Off-peak', time(21, 0), time(7, 0), 11.579),
+            ('Off-peak', time(10, 0), time(16, 0), 11.579),
+        ]
+    },
+    'TAS97': {
+        'name': 'Residential time of use CER',
+        'periods': [
+            ('Peak', time(7, 0), time(10, 0), 20.853),
+            ('Peak', time(16, 0), time(21, 0), 20.853),
+            ('Off-peak', time(21, 0), time(7, 0), 3.128),
+            ('Off-peak', time(10, 0), time(16, 0), 3.128),
+            ('Super off-peak', time(10, 0), time(16, 0), 0.104),
+        ]
+    },
+    'TAS94': {
+        'name': 'Small business time of use consumption',
+        'periods': [
+            ('Peak', time(7, 0), time(22, 0), 19.766),
+            ('Shoulder', time(22, 0), time(23, 59), 11.643),
+            ('Shoulder', time(0, 0), time(7, 0), 11.643),
+            ('Off-peak', time(0, 0), time(23, 59), 2.670),
+        ]
+    },
+    'TAS88': {
+        'name': 'Small business time of use demand',
+        'periods': [
+            ('Peak', time(7, 0), time(22, 0), 80.837),
+            ('Off-peak', time(22, 0), time(7, 0), 26.919),
+        ]
+    },
+    'TAS22': {
+        'name': 'Low voltage small business general',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 11.892),
+        ]
+    },
+    'TAS31': {
+        'name': 'Low voltage residential general light and power',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 10.001),
+        ]
+    }
+}
+
+
+demand_charges_2025_26 = {
     'TAS87': {
         'peak': 30.133,
         'off_peak': 10.034
@@ -94,7 +169,34 @@ demand_charges = {
     }
 }
 
-daily_fees = {
+# AER 2026–27 demand (cents/kVA/day).
+demand_charges_2026_27 = {
+    'TAS87': {
+        'peak': 34.772,
+        'off_peak': 11.579
+    },
+    'TAS97': {
+        'peak': 29.556
+    },
+    'TAS88': {
+        'peak': 80.837,
+        'off_peak': 26.919
+    },
+    'TAS98': {
+        'peak': 80.837,
+        'off_peak': 26.919
+    },
+    'TAS89': {
+        'peak': 60.490,
+        'off_peak': 20.143
+    },
+    'TAS82': {
+        'all': 46.616
+    }
+}
+
+
+daily_fees_2025_26 = {
     'TAS93': 70.032,
     'TAS87': 71.258,
     'TAS97': 70.032,
@@ -105,9 +207,35 @@ daily_fees = {
     'TAS82': 439.841,
 }
 
+# AER 2026–27 standing charges (cents/day).
+daily_fees_2026_27 = {
+    'TAS93': 80.544,
+    'TAS87': 81.954,
+    'TAS97': 80.544,
+    'TAS94': 96.355,
+    'TAS88': 106.569,
+    'TAS98': 106.569,
+    'TAS89': 732.692,
+    'TAS82': 520.112,
+    'TAS22': 73.254,
+    'TAS31': 73.674,
+}
 
-def get_periods(tariff_code: str):
-    tariff = tariffs.get(tariff_code)
+
+def get_tariffs(interval_time=None):
+    return tariffs_2026_27 if _use_2026_prices(interval_time) else tariffs_2025_26
+
+
+def get_demand_charges(interval_time=None):
+    return demand_charges_2026_27 if _use_2026_prices(interval_time) else demand_charges_2025_26
+
+
+def get_daily_fees(interval_time=None):
+    return daily_fees_2026_27 if _use_2026_prices(interval_time) else daily_fees_2025_26
+
+
+def get_periods(tariff_code: str, interval_time=None):
+    tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
@@ -115,37 +243,21 @@ def get_periods(tariff_code: str):
 
 def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
-    Convert RRP from $/MWh to c/kWh for SA Power Networks.
-
-    Parameters:
-    - interval_datetime (datetime): The interval datetime.
-    - tariff_code (str): The tariff code.
-    - rrp (float): The Regional Reference Price in $/MWh.
-
-    Returns:
-    - float: The price in c/kWh.
+    Convert RRP from $/MWh to c/kWh.
     """
     rrp_c_kwh = rrp / 10
-    
+
     return rrp_c_kwh
 
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
     Convert RRP from $/MWh to c/kWh for TasNetworks.
-
-    Parameters:
-    - interval_datetime (datetime): The interval datetime.
-    - tariff_code (str): The tariff code.
-    - rrp (float): The Regional Reference Price in $/MWh.
-
-    Returns:
-    - float: The price in c/kWh.
     """
     interval_datetime = interval_datetime - timedelta(minutes=5)
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
     rrp_c_kwh = rrp / 10
 
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_datetime).get(tariff_code)
     if not tariff:
         # Handle unknown tariff codes
         slope = 1.037869032618134
@@ -166,24 +278,16 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     return rrp_c_kwh + tariff['periods'][0][3]
 
 
-def calculate_demand_fee(tariff_code: str, demand_kw: float, peak_demand_kw: float = None, days: int = 30):
+def calculate_demand_fee(tariff_code: str, demand_kw: float, peak_demand_kw: float = None, days: int = 30, interval_time=None):
     """
     Calculate the demand fee for a given tariff code, demand amount, and time period.
-
-    Parameters:
-    - tariff_code (str): The tariff code.
-    - demand_kw (float): The maximum demand in kW.
-    - peak_demand_kw (float): The maximum demand during peak hours in kW (if applicable).
-    - days (int): The number of days for the billing period (default is 30).
-
-    Returns:
-    - float: The demand fee in dollars.
     """
+    demand_charges = get_demand_charges(interval_time)
     if tariff_code not in demand_charges:
-        return 0.0  # Return 0 if the tariff doesn't have a demand charge
+        return 0.0
 
     charges = demand_charges[tariff_code]
-    daily_rate = days / 30  # Convert to daily rate
+    daily_rate = days / 30
 
     if 'peak' in charges and 'off_peak' in charges:
         if peak_demand_kw is None:
@@ -196,40 +300,26 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, peak_demand_kw: flo
     elif 'all' in charges:
         return charges['all'] * demand_kw * daily_rate
     else:
-        return 0.0  # Return 0 if no applicable charge is found
+        return 0.0
 
-def get_daily_fee(tariff_code: str):
+def get_daily_fee(tariff_code: str, interval_time=None):
     """
     Get the daily fee for a given tariff code.
-
-    Parameters:
-    - tariff_code (str): The tariff code.
-
-    Returns:
-    - float: The daily fee in cents.
     """
-    return daily_fees.get(tariff_code, 0.0)
+    return get_daily_fees(interval_time).get(tariff_code, 0.0)
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):
     """
     Estimate the demand fee for a given tariff code, demand amount, and time period.
-
-    Parameters:
-    - interval_time (datetime): The interval datetime.
-    - tariff_code (str): The tariff code.
-    - demand_kw (float): The maximum demand in kW (or kVA for 8100 and 8300 tariffs).
-
-    Returns:
-    - float: The estimated demand fee in dollars.
     """
     time_of_day = interval_time.astimezone(ZoneInfo(time_zone())).time()
-    
+    demand_charges = get_demand_charges(interval_time)
+
     if tariff_code not in demand_charges:
-        return 0.0  # Return 0 if the tariff doesn't have a demand charge
+        return 0.0
 
     charge = demand_charges[tariff_code]
     if isinstance(charge, dict):
-        # Determine the time period
         if 'Peak' in charge and time(17, 0) <= time_of_day < time(20, 0):
             charge_per_kw_per_month = charge['Peak']
         elif 'Off-Peak' in charge and time(11, 0) <= time_of_day < time(13, 0):

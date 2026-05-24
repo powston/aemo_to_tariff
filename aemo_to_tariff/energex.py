@@ -5,6 +5,19 @@ from zoneinfo import ZoneInfo
 def time_zone():
     return 'Australia/Brisbane'
 
+# AER-approved price years take effect on 1 July. Energex 2026–27 prices apply
+# from 1 July 2026; before that, the 2025–26 schedule applies.
+PRICE_TRANSITION_DATE = datetime(2026, 7, 1, 0, 0, tzinfo=ZoneInfo('Australia/Brisbane'))
+
+
+def _use_2026_prices(interval_time=None) -> bool:
+    if interval_time is None:
+        interval_time = datetime.now(tz=ZoneInfo(time_zone()))
+    if interval_time.tzinfo is None:
+        interval_time = interval_time.replace(tzinfo=ZoneInfo(time_zone()))
+    return interval_time >= PRICE_TRANSITION_DATE
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -22,15 +35,45 @@ def battery_tariffs(customer_type: str):
     else:
         raise ValueError("Invalid customer type. Must be 'Residential' or 'Business'.")
 
-daily_fees = {
-    '8400': 0.556,  # Residential Flat
-    '3900': 0.556,  # Residential Transitional Demand
-    '3700': 0.556,  # Residential Demand
-    '6900': 0.556,  # Residential Time of Use Energy
-    '8500': 0.739,  # Small Business Flat
-    '3600': 0.739,  # Small Business Demand
-    '3800': 0.739,  # Small Business Transitional Demand
-    '6000': {        # Small Business Wide IFT
+
+daily_fees_2025_26 = {
+    '8400': 0.556,
+    '3900': 0.556,
+    '3700': 0.556,
+    '6900': 0.556,
+    '8500': 0.739,
+    '3600': 0.739,
+    '3800': 0.739,
+    '6000': {
+        'band1': 0.739,
+        'band2': 1.033,
+        'band3': 1.322,
+        'band4': 1.608,
+        'band5': 1.888
+    },
+    '6800': {
+        'band1': 0.739,
+        'band2': 1.041,
+        'band3': 1.343,
+        'band4': 1.647,
+        'band5': 1.950
+    },
+    '6600': 5.273,
+    '6700': 5.273,
+    '7200': 7.665,
+    '8100': 37.740,
+    '8300': 5.273,
+}
+
+daily_fees_2026_27 = {
+    '8400': 0.871,  # Residential Flat
+    '3900': 0.451,  # Residential TOU Demand & Energy
+    '3700': 0.556,  # Residential Demand (legacy, not in AER 2026–27)
+    '6900': 0.651,  # Residential Time of Use Energy
+    '8500': 1.224,  # Small Business Flat
+    '3600': 0.739,  # Small Business Demand (legacy)
+    '3800': 0.863,  # Small Business TOU Demand & Energy
+    '6000': {        # Small Business Wide IFT (legacy)
         'band1': 0.739,
         'band2': 1.033,
         'band3': 1.322,
@@ -38,20 +81,21 @@ daily_fees = {
         'band5': 1.888
     },
     '6800': {        # Small Business ToU Energy
-        'band1': 0.739,
-        'band2': 1.041,
-        'band3': 1.343,
-        'band4': 1.647,
-        'band5': 1.950
+        'band1': 1.221,
+        'band2': 1.720,
+        'band3': 2.219,
+        'band4': 2.721,
+        'band5': 3.222
     },
-    '6600': 5.273,  # Large Residential Energy
-    '6700': 5.273,  # Large Business Energy
-    '7200': 7.665,  # LV Demand Time-of-Use
-    '8100': 37.740,  # Demand Large
-    '8300': 5.273,  # Demand Small
+    '6600': 5.273,  # Large Residential Energy (legacy)
+    '6700': 8.759,  # Large Business Energy
+    '7200': 9.134,  # LV Demand Time-of-Use
+    '8100': 37.740,  # Demand Large (legacy)
+    '8300': 10.317,  # Demand Small
 }
 
-tariffs = {
+
+tariffs_2025_26 = {
     '8400': {
         'name': 'Residential Flat',
         'periods': [
@@ -188,24 +232,197 @@ tariffs = {
     },
 }
 
-# Add this to your existing code
+tariffs_2026_27 = {
+    '8400': {
+        'name': 'Residential Flat',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 9.391)
+        ],
+        'rate': 9.391
+    },
+    '3900': {
+        'name': 'Residential TOU Demand & Energy',
+        'periods': [
+            ('Evening', time(16, 0), time(21, 0), 2.533),
+            ('Overnight', time(21, 0), time(11, 0), 6.069),
+            ('Day', time(11, 0), time(16, 0), 0.434)
+        ],
+        'rate': {'Evening': 2.533, 'Overnight': 6.069, 'Day': 0.434}
+    },
+    '3700': {
+        'name': 'Residential Demand',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 3.320)
+        ],
+        'rate': 3.320
+    },
+    '6900': {
+        'name': 'Residential Time of Use Energy',
+        'periods': [
+            ('Evening', time(16, 0), time(21, 0), 19.533),
+            ('Overnight', time(21, 0), time(11, 0), 6.069),
+            ('Day', time(11, 0), time(16, 0), 0.434)
+        ],
+        'rate': {'Evening': 19.533, 'Overnight': 6.069, 'Day': 0.434}
+    },
+    '3600': {
+        'name': 'Small Business Demand',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 5.616)
+        ],
+        'rate': 5.616
+    },
+    '3800': {
+        'name': 'Small Business TOU Demand & Energy',
+        'periods': [
+            ('Evening', time(16, 0), time(21, 0), 2.318),
+            ('Overnight', time(21, 0), time(11, 0), 8.220),
+            ('Day', time(11, 0), time(16, 0), 1.627)
+        ],
+        'rate': {'Evening': 2.318, 'Overnight': 8.220, 'Day': 1.627}
+    },
+    '6000': {
+        'name': 'Small Business Wide IFT',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 10.359)
+        ],
+        'rate': 10.359
+    },
+    '8500': {
+        'name': 'Small Business Flat',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 10.760)
+        ],
+        'rate': 10.760
+    },
+    '8900': {
+        'name': 'Small 8900 TOU',
+        'periods': [
+            ('Evening', time(16, 0), time(21, 0), 22.98),
+            ('Overnight', time(21, 0), time(11, 0), 11.02),
+            ('Day', time(11, 0), time(16, 0), 8.37)
+        ],
+        'rate': 10.195
+    },
+    '8800': {
+        'name': 'Small 8800 TOU',
+        'periods': [
+            ('Evening', time(7, 0), time(21, 0), 14.58),
+            ('Overnight', time(21, 0), time(23, 59), 9.59),
+            ('Day', time(0, 0), time(7, 0), 9.59)
+        ],
+        'rate': 10.195
+    },
+    '6800': {
+        'name': 'Small Business ToU Energy',
+        'periods': [
+            ('Day', time(11, 0), time(16, 0), 1.627),
+            ('Evening', time(16, 0), time(21, 0), 26.318),
+            ('Overnight', time(21, 0), time(11, 0), 7.695)
+        ],
+        'rate': {'Day': 1.627, 'Evening': 26.318, 'Overnight': 7.695}
+    },
+    '6600': {
+        'name': 'Large Residential Energy',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 9.648)
+        ],
+        'rate': 9.648
+    },
+    '6700': {
+        'name': 'Large Business Energy',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 11.191)
+        ],
+        'rate': 11.191
+    },
+    '7200': {
+        'name': 'LV Demand Time-of-Use',
+        'periods': [
+            ('Off-Peak', time(11, 0), time(13, 0), 1.627),
+            ('Peak', time(17, 0), time(20, 0), 1.876),
+            ('Shoulder', time(20, 0), time(23, 59), 2.947),
+            ('Shoulder', time(0, 0), time(10, 59), 2.947),
+            ('Shoulder', time(13, 1), time(16, 59), 2.947),
+            ('Shoulder', time(14, 0), time(16, 59), 2.947)
+        ],
+        'rate': 2.947
+    },
+    '8100': {
+        'name': 'Demand Large',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 1.301)
+        ],
+        'rate': 1.301
+    },
+    '8300': {
+        'name': 'SAC Demand Small',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 3.365)
+        ],
+        'rate': 3.365
+    },
+    '94300': {
+        'name': 'Large TOU Energy',
+        'periods': [
+            ('Off-Peak', time(11, 0), time(13, 59), 1.627),
+            ('Peak', time(16, 0), time(20, 59), 25.876),
+            ('Shoulder', time(21, 0), time(23, 59), 19.540),
+            ('Shoulder', time(0, 0), time(10, 59), 19.540)
+        ],
+    },
+}
 
-demand_charges = {
-    '3700': { 'Peak': 8.998},  # Residential Demand
-    '3900': { 'Peak': 5.127},  # Residential Transitional Demand
-    '3600': { 'Peak': 10.289},  # Small Business Demand
-    '3800': { 'Peak': 4.975},  # Small Business Transitional Demand
+
+demand_charges_2025_26 = {
+    '3700': { 'Peak': 8.998},
+    '3900': { 'Peak': 5.127},
+    '3600': { 'Peak': 10.289},
+    '3800': { 'Peak': 4.975},
+    '6900': None,
+    '8900': None,
+    '8800': None,
+    '7200': {
+        'Off-Peak': 0.000,
+        'Peak': 14.919,
+        'Shoulder': 3.333
+    },
+    '8100': 15.773,
+    '8300': 15.704,
+}
+
+demand_charges_2026_27 = {
+    '3700': { 'Peak': 8.998},  # Residential Demand (legacy)
+    '3900': { 'Peak': 7.000},  # Residential TOU Demand & Energy
+    '3600': { 'Peak': 10.289},  # Small Business Demand (legacy)
+    '3800': { 'Peak': 7.000},  # Small Business TOU Demand & Energy
     '6900': None,  # Residential Time of Use Energy
     '8900': None,  # Small 8900 TOU
     '8800': None,  # Small 8800 TOU
     '7200': {
         'Off-Peak': 0.000,    # 11:00 to 13:00
-        'Peak': 14.919,       # 17:00 to 20:00
-        'Shoulder': 3.333     # Other times
+        'Peak': 15.459,       # 17:00 to 20:00
+        'Shoulder': 4.080     # Other times
     },
-    '8100': 15.773,  # Demand Large
-    '8300': 15.704,  # Demand Small
+    '8100': 15.773,  # Demand Large (legacy)
+    '8300': 13.913,  # Demand Small
 }
+
+
+def get_tariffs(interval_time=None):
+    """Return the tariff schedule that applies at ``interval_time``."""
+    return tariffs_2026_27 if _use_2026_prices(interval_time) else tariffs_2025_26
+
+
+def get_daily_fees(interval_time=None):
+    """Return the daily-fee schedule that applies at ``interval_time``."""
+    return daily_fees_2026_27 if _use_2026_prices(interval_time) else daily_fees_2025_26
+
+
+def get_demand_charges(interval_time=None):
+    """Return the demand-charge schedule that applies at ``interval_time``."""
+    return demand_charges_2026_27 if _use_2026_prices(interval_time) else demand_charges_2025_26
+
 
 def translate_tariff(tariff_code: str):
     """
@@ -250,10 +467,11 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
     """
     tariff_code = translate_tariff(str(tariff_code))
     time_of_day = interval_time.astimezone(ZoneInfo(time_zone())).time()
-    
-    charge = demand_charges['3700']
-    if tariff_code in demand_charges:
-        charge = demand_charges[tariff_code]
+    charges = get_demand_charges(interval_time)
+
+    charge = charges['3700']
+    if tariff_code in charges:
+        charge = charges[tariff_code]
     if charge is None:
         return 0.0  # Return 0 if the tariff doesn't have a demand charge
     if isinstance(charge, dict):
@@ -269,7 +487,7 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
 
     return charge_per_kw_per_month * demand_kw
 
-def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='peak'):
+def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='peak', interval_time=None):
     """
     Calculate the demand fee for a given tariff code, demand amount, and time period.
 
@@ -277,16 +495,18 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
     - tariff_code (str): The tariff code.
     - demand_kw (float): The maximum demand in kW (or kVA for 8100 and 8300 tariffs).
     - days (int): The number of days for the billing period (default is 30).
+    - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
     - float: The demand fee in dollars.
     """
     tariff_code = translate_tariff(str(tariff_code))
+    charges = get_demand_charges(interval_time)
 
-    if tariff_code not in demand_charges:
+    if tariff_code not in charges:
         return 0.0  # Return 0 if the tariff doesn't have a demand charge
 
-    charge = demand_charges[tariff_code]
+    charge = charges[tariff_code]
     if isinstance(charge, dict):
         charge_per_kw_per_month = charge.get(tou, 0.0)
     else:
@@ -298,19 +518,20 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
 
     return total_charge
 
-def get_daily_fee(tariff_code: str, annual_usage: float = None):
+def get_daily_fee(tariff_code: str, annual_usage: float = None, interval_time=None):
     """
     Calculate the daily fee for a given tariff code.
 
     Parameters:
     - tariff_code (str): The tariff code.
     - annual_usage (float): Annual usage in kWh, required for Wide IFT and ToU Energy tariffs.
+    - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
     - float: The daily fee in dollars.
     """
     tariff_code = translate_tariff(str(tariff_code))
-    fee = daily_fees.get(tariff_code)
+    fee = get_daily_fees(interval_time).get(tariff_code)
 
     if isinstance(fee, dict):
         if annual_usage is None:
@@ -330,9 +551,9 @@ def get_daily_fee(tariff_code: str, annual_usage: float = None):
     return fee
 
 
-def get_periods(tariff_code: str):
+def get_periods(tariff_code: str, interval_time=None):
     tariff_code = translate_tariff(str(tariff_code))
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
@@ -351,7 +572,7 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     - float: The price in c/kWh.
     """
     rrp_c_kwh = rrp / 10
-    
+
     return rrp_c_kwh
 
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
@@ -372,7 +593,7 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     rrp_c_kwh = rrp / 10
 
     tariff_code = str(tariff_code)[:4]
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_datetime).get(tariff_code)
 
     if not tariff:
         # Handle unknown tariff codes

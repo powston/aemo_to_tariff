@@ -119,7 +119,7 @@ def spot_to_feed_in_tariff(interval_time, network, tariff, rrp,
     else:
         return adjusted_rrp / 10
 
-def get_daily_fee(network, tariff, annual_usage=None):
+def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
     """
     Calculate the daily fee for a given network and tariff.
 
@@ -127,6 +127,9 @@ def get_daily_fee(network, tariff, annual_usage=None):
     - network (str): The name of the network (e.g., 'Energex', 'Ausgrid', 'Evoenergy').
     - tariff (str): The tariff code.
     - annual_usage (float): Annual usage in kWh, required for some tariffs.
+    - interval_time (datetime, optional): Selects the price schedule for networks
+      that publish more than one (e.g. Energex/Ergon switch on 1 July 2026).
+      Defaults to the current date.
 
     Returns:
     - float: The daily fee in dollars.
@@ -134,36 +137,36 @@ def get_daily_fee(network, tariff, annual_usage=None):
     network = network.lower()
 
     if network == 'energex':
-        return energex.get_daily_fee(tariff, annual_usage)
+        return energex.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     elif network == 'ergon':
-        return ergon.get_daily_fee(tariff, annual_usage)
+        return ergon.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     elif network == 'ausgrid':
-        return ausgrid.get_daily_fee(tariff, annual_usage)
+        return ausgrid.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     elif network == 'evoenergy':
         # Placeholder for Evoenergy daily fee calculation
         return 0.0
     elif network == 'sapn':
-        return sapower.get_daily_fee(tariff)
+        return sapower.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'tasnetworks':
-        return tasnetworks.get_daily_fee(tariff)
+        return tasnetworks.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'victoria':
         return victoria.get_daily_fee(tariff)
     elif network == 'essential':
-        return essential.get_daily_fee(tariff)
+        return essential.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'powercor':
-        return powercor.get_daily_fee(tariff)
+        return powercor.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'united':
-        return united.get_daily_fee(tariff)
+        return united.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'jemena':
-        return jemena.get_daily_fee(tariff)
+        return jemena.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'endeavour':
-        return endeavour.get_daily_fee(tariff)
+        return endeavour.get_daily_fee(tariff, interval_time=interval_time)
     elif network == 'ausnet':
-        return ausnet.get_daily_fee(tariff, annual_usage)
+        return ausnet.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     else:
         return 1
 
-def calculate_demand_fee(network, tariff, demand_kw, days=30):
+def calculate_demand_fee(network, tariff, demand_kw, days=30, interval_time=None):
     """
     Calculate the demand fee for a given network, tariff, demand amount, and time period.
 
@@ -172,6 +175,8 @@ def calculate_demand_fee(network, tariff, demand_kw, days=30):
     - tariff (str): The tariff code.
     - demand_kw (float): The maximum demand in kW (or kVA for some tariffs).
     - days (int): The number of days for the billing period (default is 30).
+    - interval_time (datetime, optional): Selects the price schedule for networks
+      that publish more than one. Defaults to the current date.
 
     Returns:
     - float: The demand fee in dollars.
@@ -179,26 +184,26 @@ def calculate_demand_fee(network, tariff, demand_kw, days=30):
     network = network.lower()
 
     if network == 'energex':
-        return energex.calculate_demand_fee(tariff, demand_kw, days)
+        return energex.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'ergon':
-        return ergon.calculate_demand_fee(tariff, demand_kw, days)
+        return ergon.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'ausgrid':
-        return ausgrid.calculate_demand_fee(tariff, demand_kw, days)
+        return ausgrid.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'evoenergy':
         # Placeholder for Evoenergy demand fee calculation
         return 0.0
     elif network == 'sapn':
-        return sapower.calculate_demand_fee(tariff, demand_kw, days)
+        return sapower.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'tasnetworks':
-        return tasnetworks.calculate_demand_fee(tariff, demand_kw, days)
+        return tasnetworks.calculate_demand_fee(tariff, demand_kw, days=days, interval_time=interval_time)
     elif network == 'endeavour':
-        return endeavour.calculate_demand_fee(tariff, demand_kw, days)
+        return endeavour.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'victoria':
         return victoria.calculate_demand_fee(tariff, demand_kw, days)
     elif network == 'ausnet':
-        return ausnet.calculate_demand_fee(tariff, demand_kw, days)
+        return ausnet.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     elif network == 'essential':
-        return essential.calculate_demand_fee(tariff, demand_kw, days)
+        return essential.calculate_demand_fee(tariff, demand_kw, days, interval_time=interval_time)
     else:
         return 0.0
 

@@ -94,3 +94,9 @@ class TestEssentualPower(unittest.TestCase):
         msg = f"Buyer price for {tariff_code} at {interval_time} should be approximately 28.82"
         self.assertAlmostEqual(buyer_price, 25.35, places=1, msg=msg)
 
+    def test_blnt3al_2026_27_peak(self):
+        # Post-1-Jul-2026 peak rate 18.4298 → 20.9051 c/kWh
+        interval_time = datetime(2026, 7, 12, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        price = convert(interval_time, 'BLNT3AL', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 20.9051, places=2)
+

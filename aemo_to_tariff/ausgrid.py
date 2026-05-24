@@ -6,6 +6,19 @@ from aemo_to_tariff.energex import translate_tariff
 def time_zone():
     return 'Australia/Sydney'
 
+# AER-approved prices change at the start of each financial year (1 July).
+# 2026–27 prices apply from 1 July 2026; before that, 2025–26 applies.
+PRICE_TRANSITION_DATE = datetime(2026, 7, 1, 0, 0, tzinfo=ZoneInfo('Australia/Sydney'))
+
+
+def _use_2026_prices(interval_time=None) -> bool:
+    if interval_time is None:
+        interval_time = datetime.now(tz=ZoneInfo(time_zone()))
+    if interval_time.tzinfo is None:
+        interval_time = interval_time.replace(tzinfo=ZoneInfo(time_zone()))
+    return interval_time >= PRICE_TRANSITION_DATE
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -23,7 +36,8 @@ def battery_tariffs(customer_type: str):
     else:
         raise ValueError("Invalid customer type. Must be 'Residential' or 'Business'.")
 
-tariffs = {
+
+tariffs_2025_26 = {
     'EA010': {
         'name': 'Residential flat',
         'periods': [
@@ -36,7 +50,7 @@ tariffs = {
             ('Peak', time(15, 0), time(21, 0), 29.2450),
             ('Off-peak', time(21, 0), time(15, 0), 5.1535)
         ],
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
     'EA111': {
         'name': 'Residential demand (introductory)',
@@ -56,7 +70,7 @@ tariffs = {
             ('Peak', time(15, 0), time(21, 0), 34.8921),
             ('Off-peak', time(21, 0), time(15, 0), 5.7619)
         ],
-        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]  # November–March and June–August
+        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
     'EA305': {
         'name': 'Small Business LV',
@@ -67,25 +81,102 @@ tariffs = {
     }
 }
 
-demand_tariffs = {
+tariffs_2026_27 = {
+    'EA010': {
+        'name': 'Residential flat',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 12.7029)
+        ]
+    },
+    'EA025': {
+        'name': 'Residential ToU',
+        'periods': [
+            ('Peak', time(15, 0), time(21, 0), 32.5164),
+            ('Off-peak', time(21, 0), time(15, 0), 5.3570)
+        ],
+        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
+    },
+    'EA111': {
+        'name': 'Residential demand (introductory)',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 11.8010)
+        ]
+    },
+    'EA116': {
+        'name': 'Residential demand',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 2.8061)
+        ]
+    },
+    'EA225': {
+        'name': 'Small Business ToU',
+        'periods': [
+            ('Peak', time(15, 0), time(21, 0), 39.7570),
+            ('Off-peak', time(21, 0), time(15, 0), 5.8997)
+        ],
+        'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
+    },
+    'EA305': {
+        'name': 'Small Business LV',
+        'periods': [
+            ('Peak', time(15, 0), time(22, 59), 8.2347),
+            ('Off-Peak', time(21, 0), time(14, 59), 1.8459)
+        ]
+    }
+}
+
+
+demand_tariffs_2025_26 = {
     'EA025': None,
     'EA225': None,
     'EA116': { 'peak': 8.998},
     'EA305': { 'peak': 8.998},
-    'EA305': { 'peak': 8.998}
 }
 
-daily_fixed_charges = {
+demand_tariffs_2026_27 = {
+    'EA025': None,
+    'EA225': None,
+    'EA111': { 'peak': 1.4584},
+    'EA116': { 'peak': 39.4850},
+    'EA251': { 'peak': 1.3817},
+    'EA256': { 'peak': 44.5311},
+    'EA305': { 'peak': 8.998},
+}
+
+
+daily_fixed_charges_2025_26 = {
     'EA010': 47,
     'EA025': 57,
     'EA111': 51,
     'EA116': 60,
     'EA225': 184,
-    'EA305': 2047.0434
+    'EA305': 2047.0434,
 }
 
-def get_periods(tariff_code: str):
-    tariff = tariffs.get(tariff_code)
+daily_fixed_charges_2026_27 = {
+    'EA010': 50.8550,
+    'EA025': 63.2330,
+    'EA111': 57.2945,
+    'EA116': 67.0054,
+    'EA225': 218.6472,
+    'EA305': 2546.5371,
+}
+
+
+def get_tariffs(interval_time=None):
+    return tariffs_2026_27 if _use_2026_prices(interval_time) else tariffs_2025_26
+
+
+def get_demand_tariffs(interval_time=None):
+    return demand_tariffs_2026_27 if _use_2026_prices(interval_time) else demand_tariffs_2025_26
+
+
+def get_daily_fixed_charges(interval_time=None):
+    return daily_fixed_charges_2026_27 if _use_2026_prices(interval_time) else daily_fixed_charges_2025_26
+
+
+def get_periods(tariff_code: str, interval_time=None):
+    tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
     return tariff['periods']
@@ -106,7 +197,7 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     interval_datetime = interval_datetime - timedelta(minutes=5)
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
     rrp_c_kwh = rrp / 10
-    tariff = tariffs.get(tariff_code)
+    tariff = get_tariffs(interval_datetime).get(tariff_code)
 
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
@@ -146,7 +237,8 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
     - float: The estimated demand fee in dollars.
     """
     time_of_day = interval_time.astimezone(ZoneInfo(time_zone())).time()
-    
+    demand_tariffs = get_demand_tariffs(interval_time)
+
     charge = demand_tariffs['EA116']
     if tariff_code in demand_tariffs:
         charge = demand_tariffs[tariff_code]
@@ -165,7 +257,7 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
 
     return charge_per_kw_per_month * demand_kw
 
-def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='Peak'):
+def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='Peak', interval_time=None):
     """
     Calculate the demand fee for a given tariff code, demand amount, and time period.
 
@@ -173,11 +265,13 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
     - tariff_code (str): The tariff code.
     - demand_kw (float): The maximum demand in kW (or kVA for 8100 and 8300 tariffs).
     - days (int): The number of days for the billing period (default is 30).
+    - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
     - float: The demand fee in dollars.
     """
     tariff_code = translate_tariff(str(tariff_code))
+    demand_tariffs = get_demand_tariffs(interval_time)
 
     charge = demand_tariffs['EA116']
     if tariff_code in demand_tariffs:
@@ -195,18 +289,19 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
 
     return total_charge
 
-def get_daily_fee(tariff_code: str, annual_usage: float = None):
+def get_daily_fee(tariff_code: str, annual_usage: float = None, interval_time=None):
     """
     Calculate the daily fee for a given tariff code.
 
     Parameters:
     - tariff_code (str): The tariff code.
     - annual_usage (float): Annual usage in kWh, required for Wide IFT and ToU Energy tariffs.
+    - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
     - float: The daily fee in dollars.
     """
-    fee = daily_fixed_charges.get(tariff_code)
+    fee = get_daily_fixed_charges(interval_time).get(tariff_code)
     if fee is None:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
     return fee / 100  # Convert ¢ to $ for daily fixed charge
