@@ -82,10 +82,15 @@ tariffs_2025_26 = {
         'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N19': {
+        # LV demand tariff. The 10:00–14:00 window has no energy charge per
+        # the AER 2025–26 schedule (Solar Soak column blank); add an explicit
+        # period at rate 0 so convert() doesn't fall through to the default
+        # slope/intercept approximation.
         'name': 'LV Seasonal STOU Demand',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 5.4400),
             ('Low-season Peak', time(16, 0), time(20, 0), 4.8861),
+            ('Solar Soak', time(10, 0), time(14, 0), 0.0),
             ('Off Peak', time(0, 0), time(10, 0), 3.6458),
             ('Off Peak', time(14, 0), time(16, 0), 3.6458),
             ('Off Peak', time(20, 0), time(23, 59), 3.6458)
@@ -161,10 +166,13 @@ tariffs_2026_27 = {
         'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N19': {
+        # AER 2026–27 lists no Solar Soak energy charge (column blank); add
+        # a 10:00–14:00 period at rate 0 to prevent fall-through.
         'name': 'LV Seasonal STOU Demand',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 6.1024),
             ('Low-season Peak', time(16, 0), time(20, 0), 5.5284),
+            ('Solar Soak', time(10, 0), time(14, 0), 0.0),
             ('Off Peak', time(0, 0), time(10, 0), 4.2432),
             ('Off Peak', time(14, 0), time(16, 0), 4.2432),
             ('Off Peak', time(20, 0), time(23, 59), 4.2432)
@@ -455,28 +463,24 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     current_month = interval_datetime.month
     is_high_season = current_month in [11, 12, 1, 2, 3]
 
-    # Find the applicable period and rate
+    # Find the applicable period and rate. Seasonal selection is driven by
+    # the period name, not the tariff name — N95 'Storage' has 'High-season
+    # Peak' / 'Low-season Peak' periods but its name doesn't contain
+    # 'season', so the previous tariff-name check let the HS rate win in
+    # both seasons.
     for period, start, end, rate in tariff['periods']:
         if start <= interval_time < end:
-            if 'season' in tariff['name'].lower():
-                if is_high_season and 'high' in period.lower():
-                    total_price = rrp_c_kwh + rate
-                    return total_price
-                elif 'low' in period.lower() and not is_high_season:
-                    total_price = rrp_c_kwh + rate
-                    return total_price
-                elif 'solar' in period.lower():
-                    # Solar Soak applies year-round in season tariffs
-                    total_price = rrp_c_kwh + rate
-                    return total_price
-                elif 'off' in period.lower():
-                    total_price = rrp_c_kwh + rate
-                    return total_price
-                else:
-                    continue
-            else:
-                total_price = rrp_c_kwh + rate
-                return total_price
+            period_lower = period.lower()
+            if 'high' in period_lower:
+                if is_high_season:
+                    return rrp_c_kwh + rate
+                continue  # Skip HS period in low season
+            if 'low' in period_lower:
+                if not is_high_season:
+                    return rrp_c_kwh + rate
+                continue  # Skip LS period in high season
+            # Solar Soak, Off Peak, Anytime, Block N etc. apply year-round
+            return rrp_c_kwh + rate
 
     # Otherwise, this terrible approximation
     slope = 1.037869032618134

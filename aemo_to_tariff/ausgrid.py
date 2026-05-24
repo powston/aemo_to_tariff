@@ -48,7 +48,11 @@ tariffs_2025_26 = {
         'name': 'Residential ToU',
         'periods': [
             ('Peak', time(15, 0), time(21, 0), 29.2450),
-            ('Off-peak', time(21, 0), time(15, 0), 5.1535)
+            # Off-peak covers all 24 hours so it remains the rate during
+            # shoulder months (Apr/May/Sep/Oct) when Peak is skipped. The
+            # Peak entry above wins when its window matches during a peak
+            # month because periods are evaluated in order.
+            ('Off-peak', time(0, 0), time(23, 59), 5.1535)
         ],
         'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
@@ -68,7 +72,7 @@ tariffs_2025_26 = {
         'name': 'Small Business ToU',
         'periods': [
             ('Peak', time(15, 0), time(21, 0), 34.8921),
-            ('Off-peak', time(21, 0), time(15, 0), 5.7619)
+            ('Off-peak', time(0, 0), time(23, 59), 5.7619)
         ],
         'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
@@ -92,7 +96,7 @@ tariffs_2026_27 = {
         'name': 'Residential ToU',
         'periods': [
             ('Peak', time(15, 0), time(21, 0), 32.5164),
-            ('Off-peak', time(21, 0), time(15, 0), 5.3570)
+            ('Off-peak', time(0, 0), time(23, 59), 5.3570)
         ],
         'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
@@ -112,7 +116,7 @@ tariffs_2026_27 = {
         'name': 'Small Business ToU',
         'periods': [
             ('Peak', time(15, 0), time(21, 0), 39.7570),
-            ('Off-peak', time(21, 0), time(15, 0), 5.8997)
+            ('Off-peak', time(0, 0), time(23, 59), 5.8997)
         ],
         'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
@@ -204,8 +208,11 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
 
     current_month = interval_datetime.month
 
-    # Determine if current month is within peak months
-    is_peak_month = current_month in tariff.get('peak_months', [])
+    # Tariffs that don't declare 'peak_months' have non-seasonal peaks (e.g.
+    # EA305 LV business). Only skip the Peak period when the tariff explicitly
+    # restricts it to certain months.
+    peak_months = tariff.get('peak_months')
+    is_peak_month = peak_months is None or current_month in peak_months
 
     for period_name, start, end, rate in tariff['periods']:
         if period_name == 'Peak' and not is_peak_month:

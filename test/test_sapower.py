@@ -225,3 +225,11 @@ class TestSAPower(unittest.TestCase):
         interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo('Australia/Adelaide'))
         price = sapower.convert(interval_time, 'RTOU', 100.0)
         self.assertAlmostEqual(price, 10.0 + 21.33, places=2)
+
+    def test_b2r_solar_sponge_window(self):
+        # Regression: B2R previously had no period covering 10:00–16:00, so
+        # midday lookups returned the slope/intercept default (~5.59 + RRP).
+        # The window is now an explicit Solar Sponge at the off-peak rate.
+        interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=ZoneInfo('Australia/Adelaide'))
+        price = sapower.convert(interval_time, 'B2R', 0.0)
+        self.assertAlmostEqual(price, 7.26, places=2)

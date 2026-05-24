@@ -222,10 +222,16 @@ tariffs_2025_26 = {
         ]
     },
     'B2R': {
+        # Two-rate business tariff. Previously the periods only covered 16:00–
+        # 10:00 next day, leaving 10:00–16:00 falling through to the slope/
+        # intercept default. Added an explicit 'Solar Sponge' window at the
+        # off-peak rate (AER 2026–27 lists no separate solar-sponge usage rate
+        # for B2R, so it matches off-peak).
         'name': 'Business Two Rate',
         'periods': [
             ('Peak', time(17, 0), time(21, 0), None, 20.65),
             ('Shoulder', time(16, 0), time(17, 0), None, 10.32),
+            ('Solar Sponge', time(10, 0), time(16, 0), None, 7.26),
             ('Off-peak', time(21, 0), time(10, 0), None, 7.26)
         ]
     },
@@ -323,10 +329,12 @@ tariffs_2026_27 = {
         ]
     },
     'B2R': {
+        # See 2025–26 dict for the rationale on the Solar Sponge window.
         'name': 'Business Two Rate',
         'periods': [
             ('Peak', time(17, 0), time(21, 0), None, 21.57),
             ('Shoulder', time(16, 0), time(17, 0), None, 10.78),
+            ('Solar Sponge', time(10, 0), time(16, 0), None, 7.26),
             ('Off-peak', time(21, 0), time(10, 0), None, 7.26)
         ]
     },
