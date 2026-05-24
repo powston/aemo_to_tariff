@@ -1,6 +1,9 @@
 # aemo_to_tariff/sapower.py
+import logging
 from datetime import time, datetime, timedelta
 from zoneinfo import ZoneInfo
+
+_logger = logging.getLogger(__name__)
 
 def time_zone():
     return 'Australia/Adelaide'
@@ -449,6 +452,7 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
     interval_datetime = interval_datetime - timedelta(minutes=5)
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
+    _logger.debug("Interval Time: %s -> %s Tariff Code: %s RRP: %s", interval_datetime, interval_time, tariff_code, rrp)
     rrp_c_kwh = rrp / 10
 
     tariff = get_tariffs(interval_datetime).get(tariff_code)
@@ -470,9 +474,12 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
                 continue
             default_tariff = rrp_c_kwh + rate
         elif start <= interval_time < end or (start > end and (interval_time >= start or interval_time < end)):
+            _logger.debug("Checking period: %s Start: %s End: %s Months: %s Rate: %s", period, start, end, months, rate)
+            _logger.debug("Current month: %s Interval time: %s", current_month, interval_time)
             if months and current_month not in months:
                 continue
             total_price = rrp_c_kwh + rate
+            _logger.debug("Found tariff match: %s in tariff code: %s %s Total Price: %s", period, tariff_code, rate, total_price)
             return total_price
 
     return default_tariff
