@@ -58,7 +58,7 @@ tariffs_2025_26 = {
             ('Off Peak', time(20, 0), time(23, 59), 10.4931)
         ],
         'fixed_daily_charge': 63.1270,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N90': {
         'name': 'General Supply Block',
@@ -79,7 +79,7 @@ tariffs_2025_26 = {
             ('Off Peak', time(20, 0), time(23, 59), 12.1974)
         ],
         'fixed_daily_charge': 88.8470,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N19': {
         'name': 'LV Seasonal STOU Demand',
@@ -91,7 +91,7 @@ tariffs_2025_26 = {
             ('Off Peak', time(20, 0), time(23, 59), 3.6458)
         ],
         'fixed_daily_charge': 2612.00,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N95': {
         'name': 'Storage',
@@ -104,7 +104,7 @@ tariffs_2025_26 = {
             ('Off Peak', time(20, 0), time(23, 59), 1.8296)
         ],
         'fixed_daily_charge': 161.1570,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N73': {
         'name': 'Residential Demand Transitional',
@@ -137,7 +137,7 @@ tariffs_2026_27 = {
             ('Off Peak', time(20, 0), time(23, 59), 11.734)
         ],
         'fixed_daily_charge': 66.55,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N90': {
         'name': 'General Supply Block',
@@ -158,7 +158,7 @@ tariffs_2026_27 = {
             ('Off Peak', time(20, 0), time(23, 59), 13.4421)
         ],
         'fixed_daily_charge': 95.24,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N19': {
         'name': 'LV Seasonal STOU Demand',
@@ -170,7 +170,7 @@ tariffs_2026_27 = {
             ('Off Peak', time(20, 0), time(23, 59), 4.2432)
         ],
         'fixed_daily_charge': 2414.00,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N95': {
         'name': 'Storage',
@@ -183,7 +183,7 @@ tariffs_2026_27 = {
             ('Off Peak', time(20, 0), time(23, 59), 2.0163)
         ],
         'fixed_daily_charge': 169.69,
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N73': {
         'name': 'Residential Demand Transitional',
@@ -249,24 +249,29 @@ demand_charges_2026_27 = {
 
 feed_in_tariffs_2025_26 = {
     'N61': {
+        # GST-inclusive values from Endeavour 2025-26 Network Price List (page 34).
+        # HS export reward = 12.4336 c/kWh (Nov–Mar weekdays 16:00–20:00).
+        # LS export reward = 3.6837 c/kWh (Apr–Oct weekdays 16:00–20:00).
+        # Solar Soak Block 2 charge = 1.9690 c/kWh (every day 10:00–14:00, after
+        # 730 kWh/quarter); stored as -1.9690 so spot + rate = spot - 1.969.
         'name': 'Residential Electrify',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 12.4336),
             ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),
-            ('Off Peak', time(10, 0), time(14, 0), -1.9690)
+            ('Solar Soak', time(10, 0), time(14, 0), -1.9690)
         ],
         'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N95': {
         'name': 'Storage',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 12.4336),
             ('Low-season Peak', time(16, 0), time(20, 0), 3.6837),
-            ('Off Peak', time(10, 0), time(14, 0), -1.9690)
+            ('Solar Soak', time(10, 0), time(14, 0), -1.9690)
         ],
         'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     }
 }
 
@@ -278,20 +283,20 @@ feed_in_tariffs_2026_27 = {
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 11.7131),
             ('Low-season Peak', time(16, 0), time(20, 0), 3.4702),
-            ('Off Peak', time(10, 0), time(14, 0), -1.86)
+            ('Solar Soak', time(10, 0), time(14, 0), -1.86)
         ],
         'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     },
     'N95': {
         'name': 'Storage',
         'periods': [
             ('High-season Peak', time(16, 0), time(20, 0), 11.7131),
             ('Low-season Peak', time(16, 0), time(20, 0), 3.4702),
-            ('Off Peak', time(10, 0), time(14, 0), -1.86)
+            ('Solar Soak', time(10, 0), time(14, 0), -1.86)
         ],
         'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        'peak_months': [11, 12, 1, 2, 3]  # High season: Nov–Mar
     }
 }
 
@@ -420,6 +425,9 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
                 elif 'low' in period.lower() and not is_high_season:
                     total_price = rrp_c_kwh + rate
                     return total_price
+                elif 'solar' in period.lower():
+                    total_price = rrp_c_kwh + rate
+                    return total_price
                 elif 'off' in period.lower():
                     total_price = rrp_c_kwh + rate
                     return total_price
@@ -455,6 +463,10 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
                     total_price = rrp_c_kwh + rate
                     return total_price
                 elif 'low' in period.lower() and not is_high_season:
+                    total_price = rrp_c_kwh + rate
+                    return total_price
+                elif 'solar' in period.lower():
+                    # Solar Soak applies year-round in season tariffs
                     total_price = rrp_c_kwh + rate
                     return total_price
                 elif 'off' in period.lower():
