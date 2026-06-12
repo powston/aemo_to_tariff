@@ -6,6 +6,10 @@ def time_zone():
     return 'Australia/Adelaide'
 
 
+# Peak export credit for RESELE family applies November–March only (SA summer)
+RESELE_SUMMER_MONTHS = frozenset({11, 12, 1, 2, 3})
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -219,7 +223,8 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     - float: The price in c/kWh.
     """
     interval_datetime = interval_datetime - timedelta(minutes=5)
-    interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
+    local_dt = interval_datetime.astimezone(ZoneInfo(time_zone()))
+    interval_time = local_dt.time()
     rrp_c_kwh = rrp / 10
 
     feed_in_tariff = feed_in_tariffs.get(tariff_code)
@@ -231,6 +236,11 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     for period_name, start, end, rate in feed_in_tariff['periods']:
 
         if start <= interval_time < end or (start > end and (interval_time >= start or interval_time < end)):
+            # Gate Peak export credit to summer months for RESELE family
+            if (period_name == 'Peak'
+                    and tariff_code in ('RESELE', 'RESELEX', 'RELE2W', 'SBELE', 'SBELEX')
+                    and local_dt.month not in RESELE_SUMMER_MONTHS):
+                return rrp_c_kwh  # outside summer: no credit, no charge
             total_price = rrp_c_kwh + rate
             return total_price
 
