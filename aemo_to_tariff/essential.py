@@ -29,16 +29,18 @@ def battery_tariffs(customer_type: str):
     - str: The battery tariff code.
     """
     if customer_type.lower() == 'residential':
-        return {'import': ['BLNT3AL'], 'export': ['BLNREX2']}
+        return {'import': ['BLNRSS2'], 'export': ['BLNREX2']}  # was 'BLNT3AL' — obsolete since 1 Jul 2025
     elif customer_type.lower() == 'business':
-        return {'import': ['BLNT2AL'], 'export': ['BLNBEX1']}
+        return {'import': ['BLNBSS1'], 'export': ['BLNBEX1']}
+    else:
+        raise ValueError("Invalid customer type.")
 
 
 feed_in_tariffs_2025_26 = {
     'BLNREX2': {
         'name': 'LV Residential Solar Export',
         'periods': [
-            ('Peak', time(17, 0), time(19, 59), 11.5725),
+            ('Peak', time(17, 0), time(20, 0), 11.5725),
             ('Solar Soaker', time(10, 0), time(14, 59), -0.8172)
         ]
     },
@@ -57,7 +59,7 @@ feed_in_tariffs_2026_27 = {
     'BLNREX2': {
         'name': 'LV Residential Solar Export',
         'periods': [
-            ('Peak', time(17, 0), time(19, 59), 11.7212),
+            ('Peak', time(17, 0), time(20, 0), 11.7212),
             ('Solar Soaker', time(10, 0), time(14, 59), -0.8277)
         ]
     },
