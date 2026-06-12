@@ -622,9 +622,14 @@ def convert_two_way_tariff(interval_datetime: datetime, rrp: float, is_export: b
     Returns:
     - float: Price in c/kWh. For import: spot + network. For export: spot + network adjustment.
     """
+    rrp_c_kwh = rrp / 10
+
+    if not _use_2026_prices(interval_datetime):
+        # NTC 96200 does not exist before 1 July 2026 — return spot-only
+        return rrp_c_kwh
+
     local = interval_datetime.astimezone(ZoneInfo(time_zone()))
     t = local.time()
-    rrp_c_kwh = rrp / 10
     summer = _is_summer(local)
 
     if is_export:
