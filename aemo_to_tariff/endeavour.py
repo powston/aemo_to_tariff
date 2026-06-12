@@ -120,6 +120,12 @@ demand_charges = {
     }
 }
 
+# N61 High season (Nov-Mar): 12.4336 c/kWh at 16:00-20:00 business days
+# N61 Low season  (Apr-Oct):  3.6837 c/kWh at 16:00-20:00 business days
+# Solar Soak block 2 charge (-1.9690 c/kWh at 10:00-14:00) applies all year.
+N61_HIGH_SEASON_MONTHS = frozenset({11, 12, 1, 2, 3})
+N61_LOW_SEASON_MONTHS = frozenset({4, 5, 6, 7, 8, 9, 10})
+
 feed_in_tariffs = {
     'N61': {
         'name': 'Residential Electrify',
@@ -129,7 +135,7 @@ feed_in_tariffs = {
             ('Off Peak', time(10, 0), time(14, 0), -1.9690)  # inc GST - correct?
         ],
         'weekdays': [0, 1, 2, 3, 4],
-        'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # November–March and April-October - see page 19
+        'peak_months': N61_HIGH_SEASON_MONTHS  # High season: November–March - see page 19
     },
     'N95': {
         'name': 'Storage',

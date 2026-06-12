@@ -48,6 +48,31 @@ class TestEndeavour(unittest.TestCase):
         msg = f"Feed-in price for {tariff_code} at {interval_time} should be approximately 0.00"
         self.assertAlmostEqual(feed_in_price, 12.1, places=1, msg=msg)
         
+    def test_N61_low_season_export(self):
+        # Low season (Apr-Oct), business day, 16:00-20:00 -> spot + 3.6837
+        interval_time = datetime(2025, 7, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        feed_in_price = convert_feed_in_tariff(interval_time, 'N61', 0.0)
+        self.assertAlmostEqual(feed_in_price, 3.6837, places=4)
+
+    def test_N61_high_season_export(self):
+        # High season (Nov-Mar), business day, 16:00-20:00 -> spot + 12.4336
+        interval_time = datetime(2025, 1, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        feed_in_price = convert_feed_in_tariff(interval_time, 'N61', 0.0)
+        self.assertAlmostEqual(feed_in_price, 12.4336, places=4)
+
+    def test_N61_solar_soak_charge_year_round(self):
+        # Solar Soak block 2 charge (-1.9690 c/kWh at 10:00-14:00) applies all year
+        # on business days, in both high and low season.
+        from datetime import timedelta
+        for month in range(1, 13):
+            # find the first business day (Mon-Fri) of the month
+            day = datetime(2025, month, 1, 11, 0, tzinfo=ZoneInfo(time_zone()))
+            while day.weekday() >= 5:
+                day = day + timedelta(days=1)
+            feed_in_price = convert_feed_in_tariff(day, 'N61', 0.0)
+            self.assertAlmostEqual(feed_in_price, -1.9690, places=4,
+                                   msg=f"Solar soak charge wrong for month {month}")
+
     def test_convert_high_season_peak(self):
         interval_time = datetime(2023, 1, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))
         tariff_code = 'N71'
