@@ -49,7 +49,10 @@ tariffs = {
             ('Peak', time(7, 0), time(23, 0), 30.0),
             ('Off-Peak', time(23, 0), time(7, 0), 15.0)
         ],
-        'rate': {'Peak': 30.0, 'Off-Peak': 15.0}
+        'rate': {'Peak': 30.0, 'Off-Peak': 15.0},
+        # Classic Victorian ToU peak (7am–11pm) applies on business days only;
+        # weekends are entirely off-peak. See convert().
+        'weekend_offpeak': True
     },
     'VICS_SINGLE': {
         'name': 'Small Business Single Rate',
@@ -65,7 +68,10 @@ tariffs = {
             ('Peak', time(7, 0), time(22, 0), 35.0),
             ('Off-Peak', time(22, 0), time(7, 0), 18.0)
         ],
-        'rate': {'Peak': 35.0, 'Off-Peak': 18.0}
+        'rate': {'Peak': 35.0, 'Off-Peak': 18.0},
+        # Classic Victorian ToU peak (7am–10pm) applies on business days only;
+        # weekends are entirely off-peak. See convert().
+        'weekend_offpeak': True
     },
     'VICR_DEMAND': {
         'name': 'Residential Demand',
@@ -191,6 +197,20 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
         slope = 1.0
         intercept = 5.0
         return rrp_c_kwh * slope + intercept
+
+    # The classic Victorian ToU tariffs (VICR_TOU 7am–11pm, VICS_TOU 7am–10pm)
+    # define the peak as Monday–Friday only; weekends fall entirely to off-peak
+    # (CitiPower/United Energy legacy ToU definition: "weekends" listed under
+    # off-peak). Short-circuit weekends to the Off-Peak rate before the period
+    # scan. Public holidays are not handled — same limitation as the feed-in
+    # side. NOTE: the current default Victorian residential ToU (CRTOU/URTOU)
+    # uses a 3pm–9pm peak that applies *every day*; this module models the
+    # legacy 7am–11pm weekday-only definition.
+    if interval_datetime.weekday() >= 5 and tariff.get('weekend_offpeak'):
+        off_peak_rate = next((rate for name, start, end, rate in tariff['periods']
+                              if 'off' in name.lower()), None)
+        if off_peak_rate is not None:
+            return rrp_c_kwh + off_peak_rate
 
     # Identify which period the local_time falls in
     for period_name, start, end, rate in tariff['periods']:

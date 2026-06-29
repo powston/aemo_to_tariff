@@ -95,8 +95,46 @@ class TestEssentualPower(unittest.TestCase):
         self.assertAlmostEqual(buyer_price, 25.35, places=1, msg=msg)
 
     def test_blnt3al_2026_27_peak(self):
-        # Post-1-Jul-2026 peak rate 18.4298 → 20.9051 c/kWh
-        interval_time = datetime(2026, 7, 12, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        # Post-1-Jul-2026 peak rate 18.4298 → 20.9051 c/kWh.
+        # 2026-07-13 is a Monday — peak applies on business days only.
+        interval_time = datetime(2026, 7, 13, 18, 0, tzinfo=ZoneInfo(time_zone()))
         price = convert(interval_time, 'BLNT3AL', 100.0)
         self.assertAlmostEqual(price, 10.0 + 20.9051, places=2)
+
+    def test_peak_is_weekday_only(self):
+        # Essential Energy standard ToU peak (and shoulder) apply on business
+        # days only; the whole weekday Peak/Shoulder window is billed off-peak
+        # on weekends. Public holidays are NOT handled, but Essential treats a
+        # weekday public holiday as a normal peak weekday, so the Mon–Fri gate
+        # matches their published rule. BLNT3AL 2025-26: Shoulder 13.3044,
+        # Peak 18.4298, Off-Peak 5.4026.
+        rrp = 100.0  # 10 c/kWh spot
+        mon = datetime(2026, 1, 19, 18, 0, tzinfo=ZoneInfo(time_zone()))  # peak window
+        sat = datetime(2026, 1, 17, 18, 0, tzinfo=ZoneInfo(time_zone()))  # weekend peak window
+        self.assertEqual(mon.weekday(), 0)
+        self.assertEqual(sat.weekday(), 5)
+        self.assertAlmostEqual(convert(mon, 'BLNT3AL', rrp), 10.0 + 18.4298, places=3)
+        self.assertAlmostEqual(convert(sat, 'BLNT3AL', rrp), 10.0 + 5.4026, places=3)
+        # Shoulder window (10:00) collapses to off-peak on weekends too.
+        mon_sh = datetime(2026, 1, 19, 10, 0, tzinfo=ZoneInfo(time_zone()))
+        sat_sh = datetime(2026, 1, 17, 10, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(mon_sh, 'BLNT3AL', rrp), 10.0 + 13.3044, places=3)
+        self.assertAlmostEqual(convert(sat_sh, 'BLNT3AL', rrp), 10.0 + 5.4026, places=3)
+
+    def test_business_tou_peak_is_weekday_only(self):
+        # Small-business standard ToU (BLNT2AL) is also weekday-gated.
+        # 2025-26: Shoulder 14.1904, Peak 19.5029, Off-Peak 7.5707.
+        rrp = 100.0
+        mon = datetime(2026, 1, 19, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        sun = datetime(2026, 1, 18, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertEqual(sun.weekday(), 6)
+        self.assertAlmostEqual(convert(mon, 'BLNT2AL', rrp), 10.0 + 19.5029, places=3)
+        self.assertAlmostEqual(convert(sun, 'BLNT2AL', rrp), 10.0 + 7.5707, places=3)
+
+    def test_sun_soaker_peak_applies_on_weekends(self):
+        # The Sun Soaker tariff (BLNRSS2) is "Everyday" — its peak applies on
+        # weekends too, so it must NOT be weekday-gated. 2025-26 peak 16.9522.
+        sat = datetime(2026, 1, 17, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertEqual(sat.weekday(), 5)
+        self.assertAlmostEqual(convert(sat, 'BLNRSS2', 100.0), 10.0 + 16.9522, places=3)
 

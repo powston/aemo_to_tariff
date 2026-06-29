@@ -394,6 +394,21 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     return rrp_c_kwh  # Fallback if no specific feed-in tariff found
 
 
+# Essential Energy standard ToU tariffs whose Peak (and Shoulder) periods apply
+# on business days only. On weekends the entire weekday Peak/Shoulder window is
+# billed at the Off-Peak rate — the Essential 2025-26 Network Price List period
+# table shows the "Weekend" row as a single off-peak band spanning the whole
+# weekday peak/shoulder window. Public holidays are deliberately NOT handled:
+# Essential's price list states the periods "are unchanged when a public holiday
+# falls on a weekday" (i.e. a weekday public holiday is still a peak day), so the
+# Mon–Fri gate matches their rule exactly. The Sun Soaker tariffs (BLNRSS2,
+# BLNBSS1) are "Everyday" — their peak applies 7 days a week — so they are
+# excluded from this set.
+WEEKDAY_PEAK_TARIFFS = {
+    'BLNT3AU', 'BLNT3AL', 'BLNT2AU', 'BLNT2AL', 'BLNT1AO', 'BLND1AR', 'BLND1AB',
+}
+
+
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
     """
     Convert RRP from $/MWh to c/kWh for an Essential Energy tariff.
@@ -417,6 +432,14 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
         slope = 1.037869032618134
         intercept = 5.586606750833143
         return rrp_c_kwh * slope + intercept
+
+    # Weekend: standard ToU tariffs have no Peak/Shoulder — the whole day is
+    # off-peak. Short-circuit to the Off-Peak rate before the period scan.
+    if interval_datetime.weekday() >= 5 and tariff_code in WEEKDAY_PEAK_TARIFFS:
+        off_peak_rate = next((rate for name, start, end, rate in tariff['periods']
+                              if 'off' in name.lower()), None)
+        if off_peak_rate is not None:
+            return rrp_c_kwh + off_peak_rate
 
     # Match the period whose start-end covers local_time
     for period_name, start, end, rate_cents in tariff['periods']:
