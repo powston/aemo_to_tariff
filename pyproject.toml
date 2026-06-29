@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aemo_to_tariff"
-version = "0.7.17"
+version = "0.7.18"
 description = "Convert spot prices from $/MWh to c/kWh for different networks and tariffs"
 authors = [
     {name = "Ian Connor", email = "ian@powston.com"}

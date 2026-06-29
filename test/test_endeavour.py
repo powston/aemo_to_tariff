@@ -21,15 +21,17 @@ class TestEndeavour(unittest.TestCase):
         msg = f"Buyer price for {tariff_code} at {interval_time} should be approximately 31.98"
         self.assertAlmostEqual(buyer_price, 31.98 - 4.68, places=1, msg=msg)
         
-        # 17:15	$55	Act	0.692 x 17.19¢	1189.88¢	0 x 31.98¢
+        # 2025-11-15 is a SATURDAY: peak applies on business days only, so on the
+        # weekend both the feed-in reward (no 16:00–20:00 export bonus) and the
+        # buy price fall back to off-peak. N71 2025-26 off-peak = 10.4931 c/kWh.
         interval_time = datetime(2025, 11, 15, 17, 15, tzinfo=ZoneInfo(time_zone()))
         tariff_code = 'N61'
         feed_in_price = convert_feed_in_tariff(interval_time, tariff_code, 55.0)
-        msg = f"Feed-in price for {tariff_code} at {interval_time} should be approximately 5.5"
+        msg = f"Feed-in price for {tariff_code} at {interval_time} (Sat) should be spot only, ~5.5"
         self.assertAlmostEqual(feed_in_price, 5.5, places=1, msg=msg)
         buyer_price = convert(interval_time, 'N71', 55.0)
-        msg = f"Buyer price for {tariff_code} at {interval_time} should be approximately 31.98"
-        self.assertAlmostEqual(buyer_price, 31.98 - 4.68, places=1, msg=msg)
+        msg = f"Buyer price for N71 at {interval_time} (Sat) should be off-peak: 5.5 + 10.4931"
+        self.assertAlmostEqual(buyer_price, 5.5 + 10.4931, places=2, msg=msg)
         
         # 12:20 $-6 — N71 Solar Soak window, rate 3.4252 c/kWh
         # Feed-in N61 Solar Soak block 2 charge -1.969 c/kWh
@@ -50,12 +52,47 @@ class TestEndeavour(unittest.TestCase):
         self.assertAlmostEqual(feed_in_price, 12.1, places=1, msg=msg)
         
     def test_convert_high_season_peak(self):
-        interval_time = datetime(2023, 1, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        # 2023-01-16 is a Monday (peak applies on business days only).
+        interval_time = datetime(2023, 1, 16, 17, 0, tzinfo=ZoneInfo(time_zone()))
         tariff_code = 'N71'
         rrp = 100.0
         expected_price = 31.7964
         price = convert(interval_time, tariff_code, rrp)
         self.assertAlmostEqual(price, expected_price)
+
+    def test_peak_is_weekday_only(self):
+        # Endeavour ToU peak (16:00–20:00) applies on business days only; on
+        # weekends that window is billed at off-peak. N71 2025-26: HS peak
+        # 21.7964, LS peak 13.8419, off-peak 10.4931.
+        rrp = 100.0  # 10 c/kWh spot
+        # High season (January) — Saturday vs the following Monday:
+        sat_hs = datetime(2026, 1, 17, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        mon_hs = datetime(2026, 1, 19, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertEqual(sat_hs.weekday(), 5)
+        self.assertAlmostEqual(convert(sat_hs, 'N71', rrp), 10.0 + 10.4931, places=3)
+        self.assertAlmostEqual(convert(mon_hs, 'N71', rrp), 10.0 + 21.7964, places=3)
+        # Low season (July) — Sunday vs the following Monday:
+        sun_ls = datetime(2025, 7, 13, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        mon_ls = datetime(2025, 7, 14, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertEqual(sun_ls.weekday(), 6)
+        self.assertAlmostEqual(convert(sun_ls, 'N71', rrp), 10.0 + 10.4931, places=3)
+        self.assertAlmostEqual(convert(mon_ls, 'N71', rrp), 10.0 + 13.8419, places=3)
+
+    def test_solar_soak_applies_on_weekends(self):
+        # Solar Soak (10:00–14:00) applies every day, including weekends.
+        # N71 2025-26 Solar Soak = 3.4252 c/kWh.
+        sat = datetime(2026, 1, 17, 11, 30, tzinfo=ZoneInfo(time_zone()))
+        self.assertEqual(sat.weekday(), 5)
+        self.assertAlmostEqual(convert(sat, 'N71', 22.0), 2.2 + 3.4252, places=3)
+
+    def test_N91_peak_is_weekday_only(self):
+        # N91 (GS STOU) 2025-26: LS peak 15.5462, off-peak 12.1974.
+        rrp = 100.0
+        sat_ls = datetime(2025, 7, 12, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        mon_ls = datetime(2025, 7, 14, 17, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertEqual(sat_ls.weekday(), 5)
+        self.assertAlmostEqual(convert(sat_ls, 'N91', rrp), 10.0 + 12.1974, places=3)
+        self.assertAlmostEqual(convert(mon_ls, 'N91', rrp), 10.0 + 15.5462, places=3)
 
     def test_convert_low_season_peak(self):
         interval_time = datetime(2024, 8, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))

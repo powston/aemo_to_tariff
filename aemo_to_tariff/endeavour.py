@@ -463,6 +463,17 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     current_month = interval_datetime.month
     is_high_season = current_month in [11, 12, 1, 2, 3]
 
+    # Endeavour ToU peak (16:00–20:00) only applies on business days (Mon–Fri).
+    # On weekends that window is billed at the off-peak rate. Solar Soak
+    # (10:00–14:00) and Off Peak apply every day. This mirrors the weekday gate
+    # already used on the feed-in side (convert_feed_in_tariff). Public holidays
+    # are not handled here — same limitation as the feed-in side. The peak window
+    # has no Off Peak period covering it, so keep the off-peak rate as the
+    # weekend fallback.
+    is_business_day = interval_datetime.weekday() < 5
+    off_peak_rate = next((rate for period, start, end, rate in tariff['periods']
+                          if 'off' in period.lower()), None)
+
     # Find the applicable period and rate. Seasonal selection is driven by
     # the period name, not the tariff name — N95 'Storage' has 'High-season
     # Peak' / 'Low-season Peak' periods but its name doesn't contain
@@ -472,15 +483,19 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
         if start <= interval_time < end:
             period_lower = period.lower()
             if 'high' in period_lower:
-                if is_high_season:
+                if is_high_season and is_business_day:
                     return rrp_c_kwh + rate
-                continue  # Skip HS period in low season
+                continue  # Skip HS period in low season / on weekends
             if 'low' in period_lower:
-                if not is_high_season:
+                if (not is_high_season) and is_business_day:
                     return rrp_c_kwh + rate
-                continue  # Skip LS period in high season
+                continue  # Skip LS period in high season / on weekends
             # Solar Soak, Off Peak, Anytime, Block N etc. apply year-round
             return rrp_c_kwh + rate
+
+    # Weekend peak window (peak periods skipped above): bill at the off-peak rate.
+    if off_peak_rate is not None:
+        return rrp_c_kwh + off_peak_rate
 
     # Otherwise, this terrible approximation
     slope = 1.037869032618134
