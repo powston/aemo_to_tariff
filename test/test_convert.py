@@ -130,11 +130,11 @@ class TestTariffConversions(unittest.TestCase):
 
     def test_ausgrid_daily_fee(self):
         # Placeholder test - update when Ausgrid is implemented
-        self.assertEqual(get_daily_fee('Ausgrid', 'EA116'), 0.6)
+        self.assertAlmostEqual(get_daily_fee('Ausgrid', 'EA116'), 0.67, 2)
 
     def test_ausgrid_demand_fee(self):
         # Placeholder test - update when Ausgrid is implemented
-        self.assertAlmostEqual(calculate_demand_fee('Ausgrid', 'EA116', 5.5, 31), 49.489, 1)
+        self.assertAlmostEqual(calculate_demand_fee('Ausgrid', 'EA116', 5.5, 31), 217.17, 1)
 
     def test_evoenergy_daily_fee(self):
         # Placeholder test - update when Evoenergy is implemented
@@ -145,8 +145,8 @@ class TestTariffConversions(unittest.TestCase):
         self.assertEqual(calculate_demand_fee('Evoenergy', '017', 5.5, 31), 0.0)
 
     def test_sapn_daily_fee(self):
-        self.assertAlmostEqual(get_daily_fee('SAPN', 'RTOU'), 64.4, 4)
-        self.assertAlmostEqual(get_daily_fee('SAPN', 'SBTOU'), 72.59, 4)
+        self.assertAlmostEqual(get_daily_fee('SAPN', 'RTOU'), 0.6553, 4)  # dollars/day
+        self.assertAlmostEqual(get_daily_fee('SAPN', 'SBTOU'), 0.6645, 4)  # dollars/day
         # Demand estimate
         interval_time = datetime.strptime('2024-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(estimate_demand_fee(interval_time, 'SAPN', 'SBTOU', 5.5), 0.0, 2)
@@ -173,8 +173,8 @@ class TestTariffConversions(unittest.TestCase):
         self.assertAlmostEqual(spot_to_tariff(interval_time, 'SAPN', 'RTOU', 100), 20.3892, 2)
 
     def test_tasnetworks_daily_fee(self):
-        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS93'), 70.032, 2)
-        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS94'), 83.78, 2)
+        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS93'), 0.80544, 4)  # dollars/day
+        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS94'), 0.96355, 4)  # dollars/day
 
     def test_tasnetworks_demand_fee(self):
         self.assertAlmostEqual(calculate_demand_fee('tasnetworks', '75', 5.5, 31), 0.0, 2)

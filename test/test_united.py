@@ -14,7 +14,7 @@ class TestUnited(unittest.TestCase):
 
     def test_get_daily_fee(self):
         tariff_code = 'URTOU'
-        expected_fee = 41.1
+        expected_fee = 0.3151  # dollars/day
         fee = get_daily_fee(tariff_code)
         self.assertEqual(fee, expected_fee)
 

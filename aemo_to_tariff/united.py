@@ -256,9 +256,10 @@ def get_daily_fees(interval_time=None):
 
 
 def get_daily_fee(tariff_code: str, interval_time=None):
+    # Fee tables are transcribed in c/day; the package contract is dollars/day.
     if _use_2026_prices(interval_time):
-        return get_daily_fees(interval_time).get(tariff_code, 41.10)
-    return 41.10  # 2025–26 placeholder behaviour preserved
+        return get_daily_fees(interval_time).get(tariff_code, 41.10) / 100
+    return 41.10 / 100  # 2025–26 placeholder behaviour preserved
 
 def get_periods(tariff_code: str, interval_time=None):
     tariff = get_tariffs(interval_time).get(tariff_code)
