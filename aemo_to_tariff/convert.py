@@ -132,7 +132,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
       Defaults to the current date.
 
     Returns:
-    - float: The daily fee in dollars.
+    - float: The daily fee in cents per day.
     """
     network = network.lower()
 
@@ -164,7 +164,7 @@ def get_daily_fee(network, tariff, annual_usage=None, interval_time=None):
     elif network == 'ausnet':
         return ausnet.get_daily_fee(tariff, annual_usage, interval_time=interval_time)
     else:
-        return 1
+        return 100  # c/day fallback for unknown networks
 
 def calculate_demand_fee(network, tariff, demand_kw, days=30, interval_time=None):
     """

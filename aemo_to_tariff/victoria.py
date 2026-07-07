@@ -120,7 +120,7 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30):
 
 def get_daily_fee(tariff_code: str, annual_usage: float = None):
     """
-    Calculate the daily fee ($/day) for a given tariff code.
+    Calculate the daily fee (cents/day) for a given tariff code.
 
     If the daily fee is tiered by annual usage, pass in `annual_usage`.
     Otherwise, return the simple daily fee from the dictionary.
@@ -132,18 +132,18 @@ def get_daily_fee(tariff_code: str, annual_usage: float = None):
         if annual_usage is None:
             raise ValueError("Annual usage is required for this tariff.")
         if annual_usage <= 20000:
-            return fee['band1']
+            fee = fee['band1']
         elif annual_usage <= 40000:
-            return fee['band2']
+            fee = fee['band2']
         elif annual_usage <= 60000:
-            return fee['band3']
+            fee = fee['band3']
         elif annual_usage <= 80000:
-            return fee['band4']
+            fee = fee['band4']
         else:
-            return fee['band5']
+            fee = fee['band5']
 
-    # If the fee is just a number, return it as-is
-    return fee if fee else 0.0
+    # Fee table is transcribed in $/day; the package contract is cents/day.
+    return fee * 100 if fee else 0.0
 
 def get_periods(tariff_code: str):
     """

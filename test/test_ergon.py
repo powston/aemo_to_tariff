@@ -22,14 +22,14 @@ class TestErgonFunctions(unittest.TestCase):
         self.assertEqual(time_zone(), 'Australia/Brisbane')
 
     def test_get_daily_fee_2025_26(self):
-        self.assertEqual(get_daily_fee('WRTOUET1', interval_time=BEFORE_TRANSITION), 7.21)
-        self.assertEqual(get_daily_fee('ERTOUET1', interval_time=BEFORE_TRANSITION), 1.808)
+        self.assertAlmostEqual(get_daily_fee('WRTOUET1', interval_time=BEFORE_TRANSITION), 721.0, 3)
+        self.assertAlmostEqual(get_daily_fee('ERTOUET1', interval_time=BEFORE_TRANSITION), 180.8, 3)
 
     def test_get_daily_fee_2026_27(self):
-        self.assertEqual(get_daily_fee('WRTOUET1', interval_time=AFTER_TRANSITION), 7.464)
-        self.assertEqual(get_daily_fee('ERTOUET1', interval_time=AFTER_TRANSITION), 1.730)
+        self.assertAlmostEqual(get_daily_fee('WRTOUET1', interval_time=AFTER_TRANSITION), 746.4, 3)
+        self.assertAlmostEqual(get_daily_fee('ERTOUET1', interval_time=AFTER_TRANSITION), 173.0, 3)
         # New 2026–27 tariff
-        self.assertEqual(get_daily_fee('ERTDEMT1', interval_time=AFTER_TRANSITION), 1.603)
+        self.assertAlmostEqual(get_daily_fee('ERTDEMT1', interval_time=AFTER_TRANSITION), 160.3, 3)
 
     def test_get_periods_2025_26(self):
         periods = get_periods('WRTOUET1', interval_time=BEFORE_TRANSITION)

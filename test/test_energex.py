@@ -27,8 +27,8 @@ class TestEnergex(unittest.TestCase):
 
     def test_get_daily_fee_2025_26(self):
         interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)
-        self.assertEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 0.556)
+        self.assertAlmostEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 55.6, 3)
 
     def test_get_daily_fee_2026_27(self):
         interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
-        self.assertEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 0.651)
+        self.assertAlmostEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 65.1, 3)

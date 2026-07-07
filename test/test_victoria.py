@@ -43,6 +43,6 @@ class TestVictoria(unittest.TestCase):
     def test_get_daily_fee(self):
         tariff_code = 'VICR_TOU'
         annual_usage = 20000
-        expected_fee = 1.2
+        expected_fee = 120.0  # cents/day
         fee = get_daily_fee(tariff_code, annual_usage)
-        self.assertEqual(fee, expected_fee)
+        self.assertAlmostEqual(fee, expected_fee, 3)

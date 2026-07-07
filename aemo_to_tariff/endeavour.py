@@ -330,13 +330,13 @@ def get_daily_fee(tariff_code: str, interval_time=None):
     - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
-    - float: The daily fee in dollars.
+    - float: The daily fee in cents per day.
     """
     tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
-    return tariff.get('fixed_daily_charge', 0.0) / 100  # cents/day → $/day
+    return tariff.get('fixed_daily_charge', 0.0)  # already in cents/day, matching the package contract
 
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):

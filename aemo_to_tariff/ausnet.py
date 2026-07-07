@@ -154,7 +154,8 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     return rrp / 10.0  # Simple passthrough unless AusNet has special FiT windows
 
 def get_daily_fee(tariff_code: str, annual_usage: float = None, interval_time=None) -> float:
-    return get_daily_fees(interval_time).get(tariff_code, 0.0)
+    # Fee tables are transcribed in $/day; the package contract is cents/day.
+    return get_daily_fees(interval_time).get(tariff_code, 0.0) * 100
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):
     """

@@ -306,9 +306,9 @@ def get_daily_fee(tariff_code: str, annual_usage: float = None, interval_time=No
     - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
-    - float: The daily fee in dollars.
+    - float: The daily fee in cents per day.
     """
     fee = get_daily_fixed_charges(interval_time).get(tariff_code)
     if fee is None:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
-    return fee / 100  # Convert ¢ to $ for daily fixed charge
+    return fee  # Table is transcribed in ¢/day, matching the package contract (cents/day)

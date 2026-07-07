@@ -457,9 +457,10 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
 
 def get_daily_fee(tariff_code: str, interval_time=None) -> float:
     """
-    Get the daily fixed fee for the given tariff code (in dollars per day).
+    Get the daily fixed fee for the given tariff code (in cents per day).
+    Fee tables are transcribed in $/day; the package contract is cents/day.
     """
-    return get_daily_fees(interval_time).get(tariff_code, 0.0)
+    return get_daily_fees(interval_time).get(tariff_code, 0.0) * 100
 
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):

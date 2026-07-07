@@ -304,10 +304,10 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, peak_demand_kw: flo
 
 def get_daily_fee(tariff_code: str, interval_time=None):
     """
-    Get the daily fee in dollars for a given tariff code.
-    Fee tables are transcribed in c/day; the package contract is dollars/day.
+    Get the daily fee in cents for a given tariff code.
+    Fee tables are transcribed in c/day, matching the package contract (cents/day).
     """
-    return get_daily_fees(interval_time).get(tariff_code, 0.0) / 100
+    return get_daily_fees(interval_time).get(tariff_code, 0.0)
 
 def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: float):
     """

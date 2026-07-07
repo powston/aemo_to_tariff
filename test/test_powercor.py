@@ -15,7 +15,7 @@ class TestPowercor(unittest.TestCase):
     def test_get_daily_fee(self):
         tariff_code = 'PRDS'
         annual_usage = 20000
-        expected_fee = 0.4384  # dollars/day
+        expected_fee = 43.84  # cents/day
         fee = get_daily_fee(tariff_code)
         self.assertEqual(fee, expected_fee)
 

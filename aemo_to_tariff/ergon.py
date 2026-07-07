@@ -371,7 +371,7 @@ def get_daily_fee(tariff_code: str, annual_usage: float = None, interval_time=No
     - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
     Returns:
-    - float: The daily fee in dollars.
+    - float: The daily fee in cents per day.
     """
     tariff_code = translate_tariff(str(tariff_code))
     fees = get_daily_fees(interval_time)
@@ -384,17 +384,18 @@ def get_daily_fee(tariff_code: str, annual_usage: float = None, interval_time=No
             raise ValueError("Annual usage is required for this tariff.")
 
         if annual_usage <= 20000:
-            return fee['band1']
+            fee = fee['band1']
         elif annual_usage <= 40000:
-            return fee['band2']
+            fee = fee['band2']
         elif annual_usage <= 60000:
-            return fee['band3']
+            fee = fee['band3']
         elif annual_usage <= 80000:
-            return fee['band4']
+            fee = fee['band4']
         else:
-            return fee['band5']
+            fee = fee['band5']
 
-    return fee
+    # Fee tables are transcribed in $/day; the package contract is cents/day.
+    return fee * 100 if fee is not None else None
 
 
 def get_periods(tariff_code: str, interval_time=None):

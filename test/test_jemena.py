@@ -16,7 +16,7 @@ class TestJemena(unittest.TestCase):
 
     def test_get_daily_fee(self):
         tariff_code = 'PRTOU'
-        expected_fee = 120.754 / 365  # dollars/day (PRTOU annual charge)
+        expected_fee = 120.754 / 365 * 100  # cents/day (PRTOU annual charge)
         fee = get_daily_fee(tariff_code)
         self.assertEqual(fee, expected_fee)
 

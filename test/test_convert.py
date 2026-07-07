@@ -115,14 +115,14 @@ class TestTariffConversions(unittest.TestCase):
         before = datetime.strptime('2025-09-01 12:00+10:00', '%Y-%m-%d %H:%M%z')
         after = datetime.strptime('2026-09-01 12:00+10:00', '%Y-%m-%d %H:%M%z')
         # 2025–26
-        self.assertAlmostEqual(get_daily_fee('Energex', '3900', interval_time=before), 0.556, 3)
-        self.assertAlmostEqual(get_daily_fee('Energex', '7200', interval_time=before), 7.665, 3)
+        self.assertAlmostEqual(get_daily_fee('Energex', '3900', interval_time=before), 55.6, 3)
+        self.assertAlmostEqual(get_daily_fee('Energex', '7200', interval_time=before), 766.5, 3)
         # 2026–27
-        self.assertAlmostEqual(get_daily_fee('Energex', '3900', interval_time=after), 0.451, 3)
-        self.assertAlmostEqual(get_daily_fee('Energex', '7200', interval_time=after), 9.134, 3)
+        self.assertAlmostEqual(get_daily_fee('Energex', '3900', interval_time=after), 45.1, 3)
+        self.assertAlmostEqual(get_daily_fee('Energex', '7200', interval_time=after), 913.4, 3)
         # Banded fee unchanged in either schedule
-        self.assertAlmostEqual(get_daily_fee('Energex', '6000', annual_usage=15000, interval_time=after), 0.739, 3)
-        self.assertAlmostEqual(get_daily_fee('Energex', '6000', annual_usage=30000, interval_time=after), 1.033, 3)
+        self.assertAlmostEqual(get_daily_fee('Energex', '6000', annual_usage=15000, interval_time=after), 73.9, 3)
+        self.assertAlmostEqual(get_daily_fee('Energex', '6000', annual_usage=30000, interval_time=after), 103.3, 3)
 
     def test_energex_demand_fee(self):
         self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31), 0.0, 2)
@@ -130,7 +130,7 @@ class TestTariffConversions(unittest.TestCase):
 
     def test_ausgrid_daily_fee(self):
         # Placeholder test - update when Ausgrid is implemented
-        self.assertAlmostEqual(get_daily_fee('Ausgrid', 'EA116'), 0.67, 2)
+        self.assertAlmostEqual(get_daily_fee('Ausgrid', 'EA116'), 67.0054, 3)  # cents/day
 
     def test_ausgrid_demand_fee(self):
         # Placeholder test - update when Ausgrid is implemented
@@ -145,8 +145,8 @@ class TestTariffConversions(unittest.TestCase):
         self.assertEqual(calculate_demand_fee('Evoenergy', '017', 5.5, 31), 0.0)
 
     def test_sapn_daily_fee(self):
-        self.assertAlmostEqual(get_daily_fee('SAPN', 'RTOU'), 0.6553, 4)  # dollars/day
-        self.assertAlmostEqual(get_daily_fee('SAPN', 'SBTOU'), 0.6645, 4)  # dollars/day
+        self.assertAlmostEqual(get_daily_fee('SAPN', 'RTOU'), 65.53, 2)  # cents/day
+        self.assertAlmostEqual(get_daily_fee('SAPN', 'SBTOU'), 66.45, 2)  # cents/day
         # Demand estimate
         interval_time = datetime.strptime('2024-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(estimate_demand_fee(interval_time, 'SAPN', 'SBTOU', 5.5), 0.0, 2)
@@ -173,8 +173,8 @@ class TestTariffConversions(unittest.TestCase):
         self.assertAlmostEqual(spot_to_tariff(interval_time, 'SAPN', 'RTOU', 100), 20.3892, 2)
 
     def test_tasnetworks_daily_fee(self):
-        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS93'), 0.80544, 4)  # dollars/day
-        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS94'), 0.96355, 4)  # dollars/day
+        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS93'), 80.544, 3)  # cents/day
+        self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS94'), 96.355, 3)  # cents/day
 
     def test_tasnetworks_demand_fee(self):
         self.assertAlmostEqual(calculate_demand_fee('tasnetworks', '75', 5.5, 31), 0.0, 2)
