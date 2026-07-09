@@ -1,0 +1,41 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: [self-hosted, Linux, X64]
+
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      # This repo has no Advanced Security license, so results cannot be
+      # uploaded to GitHub code scanning; keep the SARIF as an artifact.
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          upload: never
+          output: codeql-results
+
+      - name: Upload CodeQL results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-results
+          path: codeql-results
