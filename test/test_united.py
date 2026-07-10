@@ -34,3 +34,10 @@ class TestUnited(unittest.TestCase):
         # Off-peak resumes outside the Saver window.
         off_peak = datetime(2026, 7, 15, 8, 0, tzinfo=ZoneInfo(time_zone()))
         self.assertAlmostEqual(convert(off_peak, 'URSTOU', 100.0), 10.0 + 5.22, places=2)
+
+    def test_reskw1r_migrates_to_urstou(self):
+        # RESKW1R closed in 2026-27 and migrates to URSTOU; it must price and
+        # return a daily fee rather than raising KeyError.
+        interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(interval_time, 'RESKW1R', 100.0), 10.0 + 20.92, places=2)
+        self.assertEqual(get_daily_fee('RESKW1R', interval_time=interval_time), 31.51)
