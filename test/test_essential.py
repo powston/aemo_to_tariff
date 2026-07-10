@@ -138,3 +138,24 @@ class TestEssentualPower(unittest.TestCase):
         self.assertEqual(sat.weekday(), 5)
         self.assertAlmostEqual(convert(sat, 'BLNRSS2', 100.0), 10.0 + 16.9522, places=3)
 
+    def test_battery_tariffs_residential_uses_blnrss2(self):
+        """battery_tariffs() should return BLNRSS2, not the obsolete BLNT3AL."""
+        tariffs = essential.battery_tariffs('Residential')
+        self.assertIn('BLNRSS2', tariffs['import'])
+        self.assertNotIn('BLNT3AL', tariffs['import'])
+        self.assertIn('BLNREX2', tariffs['export'])
+
+    def test_battery_tariffs_business_unchanged(self):
+        tariffs = essential.battery_tariffs('Business')
+        self.assertIn('BLNBSS1', tariffs['import'])
+        self.assertIn('BLNBEX1', tariffs['export'])
+
+    def test_blnrex2_peak_ends_at_2000(self):
+        """Peak export rebate window should end at 20:00, not 19:59 (both FY years)."""
+        SYDNEY = ZoneInfo('Australia/Sydney')
+        dt_inside = datetime(2026, 2, 15, 20, 4, tzinfo=SYDNEY)  # adjusted -5min to 19:59 → in window
+        price_inside = essential.convert_feed_in_tariff(dt_inside, 'BLNREX2', 0.0)
+        dt_outside = datetime(2026, 2, 15, 20, 5, tzinfo=SYDNEY)  # adjusted -5min to 20:00 → outside
+        price_outside = essential.convert_feed_in_tariff(dt_outside, 'BLNREX2', 0.0)
+        self.assertGreater(price_inside, price_outside)
+
