@@ -23,3 +23,14 @@ class TestUnited(unittest.TestCase):
         interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo(time_zone()))
         price = convert(interval_time, 'URTOU', 100.0)
         self.assertAlmostEqual(price, 10.0 + 20.92, places=2)
+
+    def test_convert_2026_27_saver_window(self):
+        # 2026-27 URSTOU adds an 11:00-16:00 Saver rate at 1.0 c/kWh; the
+        # closed URDS/FURDS tariffs migrate to the same schedule.
+        interval_time = datetime(2026, 7, 15, 13, 0, tzinfo=ZoneInfo(time_zone()))
+        for code in ('URTOU', 'URSTOU', 'URDS', 'FURDS'):
+            price = convert(interval_time, code, 100.0)
+            self.assertAlmostEqual(price, 10.0 + 1.0, places=2, msg=code)
+        # Off-peak resumes outside the Saver window.
+        off_peak = datetime(2026, 7, 15, 8, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(off_peak, 'URSTOU', 100.0), 10.0 + 5.22, places=2)
