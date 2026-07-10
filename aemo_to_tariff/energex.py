@@ -582,7 +582,7 @@ def get_periods(tariff_code: str, interval_time=None):
 
 def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
-    Convert RRP from $/MWh to c/kWh for SA Power Networks.
+    Convert RRP from $/MWh to c/kWh for Energex feed-in (export).
 
     Parameters:
     - interval_datetime (datetime): The interval datetime.
@@ -592,6 +592,11 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
     Returns:
     - float: The price in c/kWh.
     """
+    if str(tariff_code) in ('96200', '96200X'):
+        # Two-Way Tariff Trial export — seasonal reward/charge applies.
+        adjusted = interval_datetime - timedelta(minutes=5)
+        return convert_two_way_tariff(adjusted, rrp, is_export=True)
+
     rrp_c_kwh = rrp / 10
 
     return rrp_c_kwh
