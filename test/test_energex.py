@@ -67,16 +67,16 @@ class TestTwoWayTariff(unittest.TestCase):
         self.assertAlmostEqual(price, 10.0 + 6.069, places=2)
 
     def test_export_reward_summer(self):
-        # Summer export reward: Jan 15, 18:00 → -12.195
+        # Summer export reward raises the sell price: Jan 15, 18:00 → +12.195
         dt = datetime(2027, 1, 15, 18, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
-        self.assertAlmostEqual(price, 10.0 - 12.195, places=2)
+        self.assertAlmostEqual(price, 10.0 + 12.195, places=2)
 
     def test_export_charge_nonsummer(self):
-        # Non-summer export charge 11:00-13:00: Jul 15, 12:00 → +2.210
+        # Non-summer export charge 11:00-13:00 lowers the sell price: Jul 15, 12:00 → -2.210
         dt = datetime(2026, 7, 15, 12, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
-        self.assertAlmostEqual(price, 10.0 + 2.210, places=2)
+        self.assertAlmostEqual(price, 10.0 - 2.210, places=2)
 
     def test_export_bel_exempt(self):
         # BEL exempt window 10:00-11:00: Jul 15, 10:30 → 0 network
@@ -120,8 +120,22 @@ class TestTwoWayTariff(unittest.TestCase):
     def test_convert_feed_in_tariff_96200x_dispatches(self):
         # Export via the public feed-in API must apply the seasonal reward/charge.
         summer = datetime(2027, 1, 15, 18, 5, tzinfo=BRISBANE)  # adjusted to 18:00 → reward
-        self.assertAlmostEqual(energex.convert_feed_in_tariff(summer, '96200X', 100.0), 10.0 - 12.195, places=2)
+        self.assertAlmostEqual(energex.convert_feed_in_tariff(summer, '96200X', 100.0), 10.0 + 12.195, places=2)
         winter = datetime(2026, 7, 15, 12, 5, tzinfo=BRISBANE)  # adjusted to 12:00 → export charge
-        self.assertAlmostEqual(energex.convert_feed_in_tariff(winter, '96200X', 100.0), 10.0 + 2.210, places=2)
+        self.assertAlmostEqual(energex.convert_feed_in_tariff(winter, '96200X', 100.0), 10.0 - 2.210, places=2)
         # Other tariffs remain spot-only.
         self.assertAlmostEqual(energex.convert_feed_in_tariff(summer, '6900X', 100.0), 10.0, places=2)
+
+    def test_get_periods_96200(self):
+        # get_periods must not raise for the seasonal trial tariff.
+        interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
+        periods = energex.get_periods('96200', interval_time=interval_time)
+        names = {p[0] for p in periods}
+        self.assertIn('Peak', names)
+        self.assertIn('Off-Peak', names)
+        self.assertIn('Shoulder', names)
+
+    def test_estimate_demand_fee_96200_is_zero(self):
+        # Energy-only trial tariff must not fall back to the 3700 demand charge.
+        interval_time = datetime(2026, 9, 1, 18, 0, tzinfo=BRISBANE)
+        self.assertEqual(energex.estimate_demand_fee(interval_time, '96200', 5.0), 0.0)
