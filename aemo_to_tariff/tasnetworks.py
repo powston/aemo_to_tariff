@@ -67,10 +67,14 @@ tariffs_2025_26 = {
     },
     'TAS94': {
         'name': 'Small business time of use consumption',
+        # TasNetworks default TOU: Peak is weekdays 07:00-10:00 & 16:00-21:00,
+        # Shoulder is weekends 07:00-22:00, Off-peak all other times. convert()
+        # skips Peak on weekends and Shoulder on weekdays; the Off-peak entry
+        # spans the day and acts as the catch-all.
         'periods': [
-            ('Peak', time(7, 0), time(22, 0), 16.784),
-            ('Shoulder', time(22, 0), time(23, 59), 9.886),
-            ('Shoulder', time(0, 0), time(7, 0), 9.886),
+            ('Peak', time(7, 0), time(10, 0), 16.784),
+            ('Peak', time(16, 0), time(21, 0), 16.784),
+            ('Shoulder', time(7, 0), time(22, 0), 9.886),
             ('Off-peak', time(0, 0), time(23, 59), 2.426),
         ]
     },
@@ -115,10 +119,12 @@ tariffs_2026_27 = {
     },
     'TAS94': {
         'name': 'Small business time of use consumption',
+        # Peak weekdays 07:00-10:00 & 16:00-21:00; Shoulder weekends 07:00-22:00;
+        # Off-peak all other times (see convert() for the day-of-week gating).
         'periods': [
-            ('Peak', time(7, 0), time(22, 0), 19.766),
-            ('Shoulder', time(22, 0), time(23, 59), 11.643),
-            ('Shoulder', time(0, 0), time(7, 0), 11.643),
+            ('Peak', time(7, 0), time(10, 0), 19.766),
+            ('Peak', time(16, 0), time(21, 0), 19.766),
+            ('Shoulder', time(7, 0), time(22, 0), 11.643),
             ('Off-peak', time(0, 0), time(23, 59), 2.670),
         ]
     },
@@ -264,14 +270,19 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
         intercept = 5.586606750833143
         return rrp_c_kwh * slope + intercept
 
-    # Check if it's a weekend for TAS94
+    # TAS94 splits by day type: Peak applies on weekdays only, Shoulder on
+    # weekends only. Skip the period that doesn't apply so the Off-peak entry
+    # (which spans the whole day) governs the remaining hours.
     is_weekend = interval_datetime.weekday() >= 5
 
     # Find the applicable period and rate
     for period, start, end, rate in tariff['periods']:
-        if tariff_code == 'TAS94' and period == 'Off-peak' and is_weekend:
-            return rrp_c_kwh + rate
-        elif start <= interval_time < end or (start > end and (interval_time >= start or interval_time < end)):
+        if tariff_code == 'TAS94':
+            if period == 'Peak' and is_weekend:
+                continue
+            if period == 'Shoulder' and not is_weekend:
+                continue
+        if start <= interval_time < end or (start > end and (interval_time >= start or interval_time < end)):
             return rrp_c_kwh + rate
 
     # If no period is found, use the default rate (first rate in the list)

@@ -108,8 +108,12 @@ OBSERVED_CASES = [
     Case('sapn', 'RESELEX', '2026-07-09T18:30:00+09:30', 176.1, 1, 17.61, 19.8, SELL, 2.0, 'Evening(16-21)'),
     Case('sapn', 'RESELEX', '2026-07-09T05:30:00+09:30', 129.8, 1, 12.98, 14.6, SELL, 2.0, 'Overnight(21-09)'),
     # --- tasnetworks: import TAS94 / export TASX5I -- site 116 (market 2.0)
-    Case('tasnetworks', 'TAS94', '2026-07-09T14:30:00+10:00', 75.1, 1.1, 28.1542, 22.7, BUY, 2.0, 'Peak'),
-    Case('tasnetworks', 'TAS94', '2026-07-09T04:30:00+10:00', 96.3, 1.1, 22.3991, 15.4, BUY, 2.0, 'Shoulder'),
+    # TAS94 Peak is weekdays 07-10 & 16-21 only; 2026-07-09 is a Thursday, so
+    # both intervals below fall in Off-peak (2.670). The 04:30 case then lands on
+    # the LV actual (13.43 + 2 market = 15.4). The 14:30 LV of 22.7 reflects a
+    # settled spot well above the decision-time rrp here, so it is not reconciled.
+    Case('tasnetworks', 'TAS94', '2026-07-09T14:30:00+10:00', 75.1, 1.1, 11.0582, 22.7, BUY, 2.0, 'Off-peak (weekday midday)'),
+    Case('tasnetworks', 'TAS94', '2026-07-09T04:30:00+10:00', 96.3, 1.1, 13.4261, 15.4, BUY, 2.0, 'Off-peak (weekday overnight)'),
     Case('tasnetworks', 'TASX5I', '2026-07-09T12:30:00+10:00', 96.2, 1, 9.62, 10.5, SELL, 2.0, 'Day(09-16)'),
     Case('tasnetworks', 'TASX5I', '2026-07-09T18:30:00+10:00', 147.6, 1, 14.76, 16.2, SELL, 2.0, 'Evening(16-21)'),
     Case('tasnetworks', 'TASX5I', '2026-07-09T06:00:00+10:00', 112.2, 1, 11.22, 12.3, SELL, 2.0, 'Overnight(21-09)'),
@@ -159,17 +163,21 @@ class TestErgonPeriodsQuirk(unittest.TestCase):
 
 
 class TestKnownDiscrepancies(unittest.TestCase):
-    """Spots where the library still diverges from LocalVolts settled ground truth.
+    """Spots where the production price diverges from LocalVolts settled ground truth.
 
     These are encoded as *expected failures*: each asserts the production price
-    (library output + per-site market for buys; library output alone for exports)
-    lands within GROUND_TRUTH_TOL of the LocalVolts actual. They fail today because
-    the modelled window/rate is wrong. If a future change closes the gap, the
-    expected failure flips to an unexpected pass and this suite goes red -- a prompt
-    to promote the case into TestObservedCases with a corrected expectation.
+    (library output + per-site market for buys) lands within GROUND_TRUTH_TOL of the
+    LocalVolts actual. Unlike a library bug, both remaining gaps are driven by the
+    caller-supplied ``dlf`` / ``market`` inputs, not by anything the library computes
+    -- so they cannot be closed in this repo; the fix belongs in the site config that
+    feeds those parameters. They stay here to document the gap and to alert (via an
+    unexpected pass) if that config is corrected.
 
-    (The sapn RESELEX evening export gap that used to live here was closed by gating
-    the RESELE-family Peak export credit to SA summer; it is now a normal locked case.)
+    (The TAS94 Peak/Shoulder window gaps that used to live here were real library
+    bugs -- the Peak window ran 07:00-22:00 every day instead of weekdays
+    07:00-10:00 & 16:00-21:00 -- and are now fixed, so those cases are locked in
+    TestObservedCases. The sapn RESELEX evening export gap was likewise closed by
+    gating the RESELE-family Peak export credit to SA summer.)
     """
 
     GROUND_TRUTH_TOL = 1.5  # c/kWh; comfortably above next-interval-price noise
@@ -185,29 +193,17 @@ class TestKnownDiscrepancies(unittest.TestCase):
         )
 
     @unittest.expectedFailure
-    def test_tasnetworks_tas94_peak_window_too_high(self):
-        # 14:30 priced as Peak (~30.15c incl market) but LV settled 22.7c --
-        # the TAS94 Peak window/rate table looks wrong.
-        self._assert_matches_localvolts(
-            Case('tasnetworks', 'TAS94', '2026-07-09T14:30:00+10:00', 75.1, 1.1, 28.1542, 22.7, BUY, 2.0, 'Peak'))
-
-    @unittest.expectedFailure
-    def test_tasnetworks_tas94_shoulder_window_too_high(self):
-        # 04:30 Shoulder (~24.4c incl market) vs LV 15.4c -- same TAS94 table.
-        self._assert_matches_localvolts(
-            Case('tasnetworks', 'TAS94', '2026-07-09T04:30:00+10:00', 96.3, 1.1, 22.3991, 15.4, BUY, 2.0, 'Shoulder'))
-
-    @unittest.expectedFailure
-    def test_ausgrid_ea025_peak_buy_underestimated(self):
-        # LV-implied spot multiplier ~1.35 vs the 1.1 DLF default: peak buy
-        # ~54.2c (incl market) vs LV 57.2c.
+    def test_ausgrid_ea025_peak_buy_dlf_too_low(self):
+        # Not a library bug: the EA025 Peak rate is correct, but the caller passes
+        # dlf=1.1 while the site's LV-implied loss factor is ~1.32, so the peak buy
+        # comes out ~54.2c (incl market) vs LV 57.2c.
         self._assert_matches_localvolts(
             Case('ausgrid', 'EA025', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 52.2192, 57.2, BUY, 2.0, 'Peak'))
 
     @unittest.expectedFailure
-    def test_energex_6900_day_adder_overstated(self):
-        # 6900 Day at 13:30 ~12.39c (incl 4.25 market) vs LV 9.4c -- Day network
-        # adder may be overstated, or DLF/GST treatment differs.
+    def test_energex_6900_day_market_cost_too_high(self):
+        # Not a library bug: the 6900 Day network rate is only 0.434c; the ~3c gap
+        # (12.39c incl 4.25 market vs LV 9.4c) is the caller-supplied market cost.
         self._assert_matches_localvolts(
             Case('energex', '6900', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1409, 9.4, BUY, 4.25, 'Day'))
 
