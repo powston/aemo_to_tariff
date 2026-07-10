@@ -41,15 +41,12 @@ class TestSAPower(unittest.TestCase):
         self.assertAlmostEqual(price * 1.1678, expected_price, places=1, msg=f"Price: {price}, Expected: {expected_price}, Loss Factor: {loss_factor}")
     
     def test_two_way_tou_feed_peak(self):
-        # 299.59 ret (datetime.datetime(2025, 7, 3, 18, 35, tzinfo=zoneinfo.ZoneInfo(key='Australia/Adelaide')), 36.77442044, 31.24656962
+        # July is non-summer — Peak credit does NOT apply; result is spot-only
         interval_time = datetime(2025, 7, 3, 18, 35, tzinfo=ZoneInfo('Australia/Adelaide'))
         tariff_code = 'RELE2W'
         rrp = 299.59
-        expected_price = 36.77
         price = sapower.convert_feed_in_tariff(interval_time, tariff_code, rrp)
-        loss_factor = expected_price / price
-        msg = f"Price: {price}, Expected: {expected_price}, Loss Factor: {loss_factor}"
-        self.assertAlmostEqual(price * 0.871, expected_price, places=1, msg=msg)
+        self.assertAlmostEqual(price, 29.959, places=1)  # rrp/10 only
     
     def test_two_way_tou_feed_off_peak(self):
         # -17.51 ret (datetime.datetime(2025, 7, 4, 7, 40, tzinfo=zoneinfo.ZoneInfo(key='Australia/Adelaide')), -0.88640586, -2.99054519)
@@ -102,6 +99,37 @@ class TestSAPower(unittest.TestCase):
         feed_in_price = sapower.convert_feed_in_tariff(interval_time, tariff_code, rrp)
         msg = f"Feed-in Price: {feed_in_price}, Expected: 1.0"
         self.assertAlmostEqual(feed_in_price, 12.25, places=2, msg=msg)
+
+    def test_resele_peak_credit_summer_only(self):
+        """Peak export credit applies Nov–Mar only."""
+        ADELAIDE = ZoneInfo('Australia/Adelaide')
+        # February (summer) — credit should apply
+        summer = datetime(2026, 2, 15, 18, 0, tzinfo=ADELAIDE)
+        price = sapower.convert_feed_in_tariff(summer, 'RESELE', 0.0)
+        self.assertAlmostEqual(price, 12.25, places=2)
+
+        # July (winter) — no credit, spot only
+        winter = datetime(2026, 7, 15, 18, 0, tzinfo=ADELAIDE)
+        price = sapower.convert_feed_in_tariff(winter, 'RESELE', 0.0)
+        self.assertAlmostEqual(price, 0.0, places=2)
+
+    def test_rele2w_peak_credit_summer_only(self):
+        """Same gate applies to RELE2W."""
+        ADELAIDE = ZoneInfo('Australia/Adelaide')
+        summer = datetime(2026, 2, 15, 18, 0, tzinfo=ADELAIDE)
+        self.assertAlmostEqual(sapower.convert_feed_in_tariff(summer, 'RELE2W', 0.0), 12.25, places=2)
+        winter = datetime(2026, 7, 15, 18, 0, tzinfo=ADELAIDE)
+        self.assertAlmostEqual(sapower.convert_feed_in_tariff(winter, 'RELE2W', 0.0), 0.0, places=2)
+
+    def test_sbele_peak_credit_summer_only(self):
+        """Same gate applies to SBELE."""
+        ADELAIDE = ZoneInfo('Australia/Adelaide')
+        summer = datetime(2026, 2, 15, 18, 0, tzinfo=ADELAIDE)
+        # SBELE FY26 peak rate — check what's in the tariff definition
+        price_summer = sapower.convert_feed_in_tariff(summer, 'SBELE', 0.0)
+        self.assertGreater(price_summer, 0)  # should be positive credit in summer
+        winter = datetime(2026, 7, 15, 18, 0, tzinfo=ADELAIDE)
+        self.assertAlmostEqual(sapower.convert_feed_in_tariff(winter, 'SBELE', 0.0), 0.0, places=2)
 
     def test_morning_tou_tariff(self):
         interval_time = datetime(2025, 3, 30, 8, 55, tzinfo=ZoneInfo('Australia/Adelaide'))
