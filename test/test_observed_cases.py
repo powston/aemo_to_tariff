@@ -32,6 +32,7 @@ import unittest
 from collections import namedtuple
 from datetime import datetime
 
+from aemo_to_tariff import ergon
 from aemo_to_tariff.convert import spot_to_tariff, spot_to_feed_in_tariff, get_periods
 
 
@@ -144,12 +145,13 @@ class TestObservedCases(unittest.TestCase):
         self.assertEqual(len(pairs), 20)
 
 
-class TestErgonPeriodsQuirk(unittest.TestCase):
-    """ergon ERTOUET1 prices fine via spot_to_tariff but get_periods can't resolve it.
+class TestErgonPeriods(unittest.TestCase):
+    """ergon ERTOUET1 prices via spot_to_tariff and resolves its own periods.
 
-    Documented in the source data: get_periods() raises "Unknown tariff" for
-    ERTOUET1 even though spot_to_tariff prices it, so the ergon windows above are
-    coarse day-part buckets rather than real tariff periods.
+    The source data noted get_periods('ergon', ...) raising "Unknown tariff" for
+    ERTOUET1 -- but that was a wrapper routing bug (ergon was dispatched through
+    ausgrid.get_periods, which has no ERTOUET1), not an ergon limitation. The
+    wrapper now dispatches to the ergon module; these tests lock that in.
     """
 
     def test_spot_to_tariff_prices_ertouet1(self):
@@ -157,9 +159,12 @@ class TestErgonPeriodsQuirk(unittest.TestCase):
         price = spot_to_tariff(t, 'ergon', 'ERTOUET1', 61.4, dlf=1.1, mlf=1)
         self.assertAlmostEqual(price, 7.135, places=3)
 
-    def test_get_periods_raises_for_ertouet1(self):
-        with self.assertRaises(ValueError):
-            get_periods('ergon', 'ERTOUET1')
+    def test_get_periods_dispatches_to_ergon(self):
+        # Regression: the wrapper must route ergon to the ergon module, not ausgrid.
+        t = datetime.fromisoformat('2026-07-09T12:25:00+10:00')
+        periods = get_periods('ergon', 'ERTOUET1', interval_time=t)
+        self.assertEqual(periods, ergon.get_periods('ERTOUET1', interval_time=t))
+        self.assertIn('Peak', [name for name, *_ in periods])
 
 
 class TestKnownDiscrepancies(unittest.TestCase):
