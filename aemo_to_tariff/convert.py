@@ -102,12 +102,10 @@ def spot_to_feed_in_tariff(interval_time, network, tariff, rrp,
         return tasnetworks.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
     elif network == 'endeavour':
         return endeavour.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
-    elif network == 'evoenergy':
-        return evoenergy.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
     elif network == 'jemena':
         return jemena.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
     elif network == 'powercor':
-        return united.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
+        return powercor.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
     elif network == 'united':
         return united.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
     elif network == 'essential':
