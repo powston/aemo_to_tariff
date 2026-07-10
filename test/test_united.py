@@ -41,3 +41,13 @@ class TestUnited(unittest.TestCase):
         interval_time = datetime(2026, 7, 15, 18, 0, tzinfo=ZoneInfo(time_zone()))
         self.assertAlmostEqual(convert(interval_time, 'RESKW1R', 100.0), 10.0 + 20.92, places=2)
         self.assertEqual(get_daily_fee('RESKW1R', interval_time=interval_time), 31.51)
+
+    def test_urstou_family_covers_end_of_day(self):
+        # The final off-peak period wraps to midnight, so an interval whose
+        # adjusted local time is exactly 23:59 prices at off-peak (5.22) and
+        # does not fall through to the linear approximation. convert()
+        # subtracts 5 min, so pass 00:04 to land on 23:59.
+        end_of_day = datetime(2026, 7, 16, 0, 4, tzinfo=ZoneInfo(time_zone()))
+        for code in ('URSTOU', 'URTOU', 'URDS', 'FURDS', 'FURTOU', 'RESKW1R'):
+            self.assertAlmostEqual(convert(end_of_day, code, 100.0), 10.0 + 5.220,
+                                   places=2, msg=code)
