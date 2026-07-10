@@ -32,3 +32,87 @@ class TestEnergex(unittest.TestCase):
     def test_get_daily_fee_2026_27(self):
         interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
         self.assertAlmostEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 65.1, 3)
+
+
+class TestTwoWayTariff(unittest.TestCase):
+
+    def test_import_peak_summer(self):
+        # Summer peak: Jan 15, 18:00 → Peak rate 19.533
+        dt = datetime(2027, 1, 15, 18, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
+        self.assertAlmostEqual(price, 10.0 + 19.533, places=2)
+
+    def test_import_offpeak_summer(self):
+        # Summer off-peak: Jan 15, 12:00 → Off-Peak 0.434
+        dt = datetime(2027, 1, 15, 12, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
+        self.assertAlmostEqual(price, 10.0 + 0.434, places=2)
+
+    def test_import_shoulder_summer(self):
+        # Summer shoulder: Jan 15, 21:00 → Shoulder 6.069
+        dt = datetime(2027, 1, 15, 21, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
+        self.assertAlmostEqual(price, 10.0 + 6.069, places=2)
+
+    def test_import_offpeak_nonsummer(self):
+        # Non-summer off-peak: Jul 15, 12:00 → Off-Peak 0.434
+        dt = datetime(2026, 7, 15, 12, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
+        self.assertAlmostEqual(price, 10.0 + 0.434, places=2)
+
+    def test_import_shoulder_nonsummer(self):
+        # Non-summer shoulder (no peak period): Jul 15, 18:00 → Shoulder 6.069
+        dt = datetime(2026, 7, 15, 18, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
+        self.assertAlmostEqual(price, 10.0 + 6.069, places=2)
+
+    def test_export_reward_summer(self):
+        # Summer export reward: Jan 15, 18:00 → -12.195
+        dt = datetime(2027, 1, 15, 18, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
+        self.assertAlmostEqual(price, 10.0 - 12.195, places=2)
+
+    def test_export_charge_nonsummer(self):
+        # Non-summer export charge 11:00-13:00: Jul 15, 12:00 → +2.210
+        dt = datetime(2026, 7, 15, 12, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
+        self.assertAlmostEqual(price, 10.0 + 2.210, places=2)
+
+    def test_export_bel_exempt(self):
+        # BEL exempt window 10:00-11:00: Jul 15, 10:30 → 0 network
+        dt = datetime(2026, 7, 15, 10, 30, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
+        self.assertAlmostEqual(price, 10.0 + 0.0, places=2)
+
+    def test_export_no_charge_nonsummer_evening(self):
+        # Non-summer evening export: no charge
+        dt = datetime(2026, 7, 15, 20, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
+        self.assertAlmostEqual(price, 10.0, places=2)
+
+    def test_pre_july_2026_returns_spot_only(self):
+        # Before 1 July 2026 — tariff doesn't exist, should return spot only
+        dt = datetime(2025, 12, 15, 18, 0, tzinfo=BRISBANE)  # summer but pre-2026-27
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
+        self.assertAlmostEqual(price, 10.0, places=2)  # spot only, no network
+
+    def test_pre_july_2026_export_returns_spot_only(self):
+        # Before 1 July 2026 — export, should return spot only
+        dt = datetime(2025, 12, 15, 18, 0, tzinfo=BRISBANE)
+        price = energex.convert_two_way_tariff(dt, 100.0, is_export=True)
+        self.assertAlmostEqual(price, 10.0, places=2)  # spot only, no network
+
+    def test_daily_fee_96200(self):
+        # Fee table is $/day; get_daily_fee returns cents/day.
+        interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
+        self.assertAlmostEqual(energex.get_daily_fee('96200', interval_time=interval_time), 65.1, 3)
+
+    def test_translate_tariff_96200(self):
+        # 96200 must not be truncated
+        self.assertEqual(energex.translate_tariff('96200'), '96200')
+
+    def test_convert_96200_dispatches(self):
+        # Ensure convert() with tariff '96200' reaches convert_two_way_tariff
+        dt = datetime(2027, 1, 15, 18, 5, tzinfo=BRISBANE)  # 18:05 → adjusted to 18:00 → peak
+        price = energex.convert(dt, '96200', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 19.533, places=2)

@@ -18,6 +18,12 @@ def _use_2026_prices(interval_time=None) -> bool:
     return interval_time >= PRICE_TRANSITION_DATE
 
 
+def _is_summer(interval_time: datetime) -> bool:
+    """Return True if the interval falls in the summer season (Nov–Mar)."""
+    local_time = interval_time.astimezone(ZoneInfo(time_zone()))
+    return local_time.month in (11, 12, 1, 2, 3)
+
+
 def battery_tariffs(customer_type: str):
     """
     Get the battery tariff for a given customer type.
@@ -29,7 +35,7 @@ def battery_tariffs(customer_type: str):
     - str: The battery tariff code.
     """
     if customer_type == 'Residential':
-        return {'import': ['6900'], 'export': ['6900X']}
+        return {'import': ['6900', '96200'], 'export': ['6900X', '96200X']}
     elif customer_type == 'Business':
         return {'import': ['6800'], 'export': ['6800X']}
     else:
@@ -92,6 +98,7 @@ daily_fees_2026_27 = {
     '7200': 9.134,  # LV Demand Time-of-Use
     '8100': 37.740,  # Demand Large (legacy)
     '8300': 10.317,  # Demand Small
+    '96200': 0.651,  # Residential Two-Way Tariff Trial
 }
 
 
@@ -371,6 +378,17 @@ tariffs_2026_27 = {
             ('Shoulder', time(0, 0), time(10, 59), 19.540)
         ],
     },
+    '96200': {
+        'name': 'Residential Two-Way Tariff Trial',
+        'seasonal': True,
+        'rate': {
+            'Peak': 19.533,
+            'Shoulder': 6.069,
+            'Off-Peak': 0.434,
+            'ExportCharge': 2.210,
+            'ExportReward': -12.195,
+        }
+    },
 }
 
 
@@ -435,6 +453,8 @@ def translate_tariff(tariff_code: str):
     - str: The canonical tariff code for lookup.
     """
     code = str(tariff_code)
+    if code == '96200':  # Two-Way Tariff Trial — do not truncate
+        return code
     if len(code) == 4:
         prefix = code[:2]
         return prefix + '00'
@@ -576,6 +596,63 @@ def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: f
 
     return rrp_c_kwh
 
+def convert_two_way_tariff(interval_datetime: datetime, rrp: float, is_export: bool = False) -> float:
+    """
+    Convert RRP to c/kWh for the Energex Residential Two-Way Tariff Trial (NTC 96200).
+
+    Import periods:
+      Summer (Nov-Mar):
+        Peak:     17:00-20:00  → 19.533 c/kWh
+        Off-Peak: 09:00-15:00  → 0.434 c/kWh
+        Shoulder: all other    → 6.069 c/kWh
+      Non-Summer (Apr-Oct):
+        Off-Peak: 09:00-15:00  → 0.434 c/kWh
+        Shoulder: all other    → 6.069 c/kWh  (no peak period)
+
+    Export periods:
+      Summer:     17:00-20:00  → -12.195 c/kWh (reward/credit)
+      Non-Summer: 11:00-13:00  → +2.210 c/kWh (charge)
+                  10:00-11:00  → 0 (BEL exempt)
+      All other:               → 0 c/kWh
+
+    Parameters:
+    - interval_datetime: The dispatch interval datetime (tz-aware), already adjusted.
+    - rrp: AEMO Regional Reference Price in $/MWh.
+    - is_export: True for export (feed-in), False for import.
+
+    Returns:
+    - float: Price in c/kWh. For import: spot + network. For export: spot + network adjustment.
+    """
+    rrp_c_kwh = rrp / 10
+
+    if not _use_2026_prices(interval_datetime):
+        # NTC 96200 does not exist before 1 July 2026 — return spot-only
+        return rrp_c_kwh
+
+    local = interval_datetime.astimezone(ZoneInfo(time_zone()))
+    t = local.time()
+    summer = _is_summer(local)
+
+    if is_export:
+        if summer and time(17, 0) <= t < time(20, 0):
+            network = -12.195  # export reward (credit)
+        elif not summer and time(11, 0) <= t < time(13, 0):
+            network = 2.210   # export charge
+        else:
+            network = 0.0     # no charge/reward
+        return rrp_c_kwh + network
+
+    # Import
+    if summer and time(17, 0) <= t < time(20, 0):
+        network = 19.533  # Peak
+    elif time(9, 0) <= t < time(15, 0):
+        network = 0.434   # Off-Peak (all year)
+    else:
+        network = 6.069   # Shoulder (summer: 20-09 + 15-17; non-summer: 15-09)
+
+    return rrp_c_kwh + network
+
+
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
     Convert RRP from $/MWh to c/kWh for Energex.
@@ -590,6 +667,12 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
     interval_datetime = interval_datetime - timedelta(minutes=5)
     tariff_code = translate_tariff(str(tariff_code))
+
+    # Two-Way Tariff Trial — delegate to seasonal handler. interval_datetime is
+    # already adjusted by 5 minutes above, so pass it directly.
+    if tariff_code == '96200':
+        return convert_two_way_tariff(interval_datetime, rrp, is_export=False)
+
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
     rrp_c_kwh = rrp / 10
 
