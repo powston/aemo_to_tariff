@@ -102,11 +102,10 @@ tariffs_2025_26 = {
     'BLNRSS2': {
         'name': 'LV Residential Sun Soaker',
         'periods': [
-            ('Peak', time(7, 0), time(9, 59), 16.9522),
-            ('Peak', time(15, 0), time(21, 59), 16.9522),
-            ('Off-Peak', time(0, 0), time(6, 59), 5.8530),
-            ('Off-Peak', time(10, 0), time(14, 59), 5.8530),
-            ('Off-Peak', time(22, 0), time(23, 59), 5.8530),
+            ('Peak', time(7, 0), time(10, 0), 16.9522),
+            ('Peak', time(15, 0), time(22, 0), 16.9522),
+            ('Off-Peak', time(10, 0), time(15, 0), 5.8530),
+            ('Off-Peak', time(22, 0), time(7, 0), 5.8530),
         ]
     },
     'BLND1AR': {
@@ -174,9 +173,13 @@ tariffs_2025_26 = {
         ]
     },
     'BLNBSS1': {
+        # SS window per the 2025-26 Network Price List: Peak 7am-10am and
+        # 3pm-10pm every day, Off-Peak all other times (same shape as BLNRSS2).
         'name': 'LV Small Business TOU - Sun Soaker',
         'periods': [
-            ('Peak', time(17, 0), time(20, 0), 17.9646),
+            ('Peak', time(7, 0), time(10, 0), 17.9646),
+            ('Peak', time(15, 0), time(22, 0), 17.9646),
+            ('Off-Peak', time(10, 0), time(15, 0), 8.1015),
             ('Off-Peak', time(22, 0), time(7, 0), 8.1015),
         ]
     },
@@ -212,11 +215,10 @@ tariffs_2026_27 = {
     'BLNRSS2': {
         'name': 'LV Residential Sun Soaker',
         'periods': [
-            ('Peak', time(7, 0), time(9, 59), 17.9566),
-            ('Peak', time(15, 0), time(21, 59), 17.9566),
-            ('Off-Peak', time(0, 0), time(6, 59), 6.3275),
-            ('Off-Peak', time(10, 0), time(14, 59), 6.3275),
-            ('Off-Peak', time(22, 0), time(23, 59), 6.3275),
+            ('Peak', time(7, 0), time(10, 0), 17.9566),
+            ('Peak', time(15, 0), time(22, 0), 17.9566),
+            ('Off-Peak', time(10, 0), time(15, 0), 6.3275),
+            ('Off-Peak', time(22, 0), time(7, 0), 6.3275),
         ]
     },
     'BLND1AR': {
@@ -284,10 +286,13 @@ tariffs_2026_27 = {
         ]
     },
     'BLNBSS1': {
+        # Same SS window as 2025-26 (Peak 7-10 and 15-22 every day).
         'name': 'LV Small Business TOU - Sun Soaker',
         'periods': [
+            ('Peak', time(7, 0), time(10, 0), 18.9741),
             ('Peak', time(15, 0), time(22, 0), 18.9741),
-            ('Off-Peak', time(22, 0), time(15, 0), 8.5988),
+            ('Off-Peak', time(10, 0), time(15, 0), 8.5988),
+            ('Off-Peak', time(22, 0), time(7, 0), 8.5988),
         ]
     },
 }

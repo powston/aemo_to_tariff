@@ -145,7 +145,7 @@ def get_daily_fee(tariff_code: str, annual_usage: float = None):
     # Fee table is transcribed in $/day; the package contract is cents/day.
     return fee * 100 if fee else 0.0
 
-def get_periods(tariff_code: str):
+def get_periods(tariff_code: str, interval_time=None):
     """
     Retrieve the time-of-use periods for a given tariff code.
     """

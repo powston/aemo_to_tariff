@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import aemo_to_tariff.essential as essential
 from aemo_to_tariff.essential import time_zone, convert_feed_in_tariff, convert
@@ -159,3 +159,29 @@ class TestEssentualPower(unittest.TestCase):
         price_outside = essential.convert_feed_in_tariff(dt_outside, 'BLNREX2', 0.0)
         self.assertGreater(price_inside, price_outside)
 
+
+    def test_blnbss1_full_day_coverage(self):
+        # Business Sun Soaker follows the SS window: Peak 7-10 and 15-22 every
+        # day, Off-Peak all other times. A noon interval must price at
+        # Off-Peak, not fall back to the first (Peak) period.
+        noon = datetime(2026, 1, 19, 12, 0, tzinfo=ZoneInfo(time_zone()))  # Monday
+        self.assertAlmostEqual(convert(noon, 'BLNBSS1', 100.0), 10.0 + 8.1015, places=3)
+        morning_peak = datetime(2026, 1, 19, 8, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(morning_peak, 'BLNBSS1', 100.0), 10.0 + 17.9646, places=3)
+        # Sun Soaker peak is everyday — no weekday gate.
+        sat_evening = datetime(2026, 1, 17, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(sat_evening, 'BLNBSS1', 100.0), 10.0 + 17.9646, places=3)
+        # 2026-27 rates, same window shape.
+        noon_27 = datetime(2026, 8, 17, 12, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(noon_27, 'BLNBSS1', 100.0), 10.0 + 8.5988, places=3)
+
+    def test_sun_soaker_no_boundary_gaps(self):
+        # Period bounds are exclusive at the end; exact boundary times like
+        # 09:59/14:59 must not fall through to the Peak fallback.
+        for code, off_rate in (('BLNBSS1', 8.1015), ('BLNRSS2', 5.8530)):
+            for hh, mm in ((6, 59), (14, 59), (23, 59), (12, 0), (4, 0)):
+                dt = datetime(2026, 1, 19, hh, mm, tzinfo=ZoneInfo(time_zone()))
+                # Add 5 min because convert() adjusts the interval end back.
+                dt = dt + timedelta(minutes=5)
+                self.assertAlmostEqual(convert(dt, code, 100.0), 10.0 + off_rate,
+                                       places=3, msg=f"{code} at {hh}:{mm:02d}")

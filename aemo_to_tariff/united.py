@@ -112,7 +112,7 @@ tariffs_2026_27 = {
             ('Off-peak', time(0, 0), time(11, 0), 5.220),
             ('Saver', time(11, 0), time(16, 0), 1.000),
             ('Peak', time(16, 0), time(21, 0), 20.920),
-            ('Off-peak', time(21, 0), time(23, 59), 5.220),
+            ('Off-peak', time(21, 0), time(0, 0), 5.220),  # wraps to midnight so 23:59 is covered
         ]
     },
     'URSTOU': {
@@ -121,7 +121,7 @@ tariffs_2026_27 = {
             ('Off-peak', time(0, 0), time(11, 0), 5.220),
             ('Saver', time(11, 0), time(16, 0), 1.000),
             ('Peak', time(16, 0), time(21, 0), 20.920),
-            ('Off-peak', time(21, 0), time(23, 59), 5.220),
+            ('Off-peak', time(21, 0), time(0, 0), 5.220),  # wraps to midnight so 23:59 is covered
         ]
     },
     'FURTOU': {
@@ -130,7 +130,7 @@ tariffs_2026_27 = {
             ('Off-peak', time(0, 0), time(11, 0), 5.220),
             ('Saver', time(11, 0), time(16, 0), 1.000),
             ('Peak', time(16, 0), time(21, 0), 20.920),
-            ('Off-peak', time(21, 0), time(23, 59), 5.220),
+            ('Off-peak', time(21, 0), time(0, 0), 5.220),  # wraps to midnight so 23:59 is covered
         ]
     },
     'FURDS': {
@@ -139,7 +139,7 @@ tariffs_2026_27 = {
             ('Off-peak', time(0, 0), time(11, 0), 5.220),
             ('Saver', time(11, 0), time(16, 0), 1.000),
             ('Peak', time(16, 0), time(21, 0), 20.920),
-            ('Off-peak', time(21, 0), time(23, 59), 5.220),
+            ('Off-peak', time(21, 0), time(0, 0), 5.220),  # wraps to midnight so 23:59 is covered
         ]
     },
     'URDS': {
@@ -148,7 +148,16 @@ tariffs_2026_27 = {
             ('Off-peak', time(0, 0), time(11, 0), 5.220),
             ('Saver', time(11, 0), time(16, 0), 1.000),
             ('Peak', time(16, 0), time(21, 0), 20.920),
-            ('Off-peak', time(21, 0), time(23, 59), 5.220),
+            ('Off-peak', time(21, 0), time(0, 0), 5.220),  # wraps to midnight so 23:59 is covered
+        ]
+    },
+    'RESKW1R': {
+        'name': 'Residential TOU (URSTOU)',
+        'periods': [
+            ('Off-peak', time(0, 0), time(11, 0), 5.220),
+            ('Saver', time(11, 0), time(16, 0), 1.000),
+            ('Peak', time(16, 0), time(21, 0), 20.920),
+            ('Off-peak', time(21, 0), time(0, 0), 5.220),  # wraps to midnight so 23:59 is covered
         ]
     },
     'NDMO21': {
@@ -236,6 +245,7 @@ daily_fees_2026_27 = {
     'URDS': 31.51,
     'FURTOU': 31.51,
     'FURDS': 31.51,
+    'RESKW1R': 31.51,
     'LVM1R': 61.64,
     'LVTOU': 61.64,
     'LVMKW1R': 61.64,

@@ -381,13 +381,26 @@ tariffs_2026_27 = {
     '96200': {
         'name': 'Residential Two-Way Tariff Trial',
         'seasonal': True,
+        # Feed-in sign convention: reward adds to the sell price, charge subtracts.
         'rate': {
             'Peak': 19.533,
             'Shoulder': 6.069,
             'Off-Peak': 0.434,
-            'ExportCharge': 2.210,
-            'ExportReward': -12.195,
-        }
+            'ExportCharge': -2.210,
+            'ExportReward': 12.195,
+        },
+        # get_periods() picks the season-appropriate list; the 17:00-20:00
+        # Peak only exists Nov-Mar and is Shoulder the rest of the year.
+        'periods_summer': [
+            ('Peak', time(17, 0), time(20, 0), 19.533),
+            ('Off-Peak', time(9, 0), time(15, 0), 0.434),
+            ('Shoulder', time(15, 0), time(17, 0), 6.069),
+            ('Shoulder', time(20, 0), time(9, 0), 6.069),
+        ],
+        'periods_non_summer': [
+            ('Off-Peak', time(9, 0), time(15, 0), 0.434),
+            ('Shoulder', time(15, 0), time(9, 0), 6.069),
+        ]
     },
 }
 
@@ -415,6 +428,7 @@ demand_charges_2026_27 = {
     '3600': { 'Peak': 10.289},  # Small Business Demand (legacy)
     '3800': { 'Peak': 7.000},  # Small Business TOU Demand & Energy
     '6900': None,  # Residential Time of Use Energy
+    '96200': None,  # Residential Two-Way Tariff Trial (energy-only)
     '8900': None,  # Small 8900 TOU
     '8800': None,  # Small 8800 TOU
     '7200': {
@@ -527,6 +541,8 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
         return 0.0  # Return 0 if the tariff doesn't have a demand charge
 
     charge = charges[tariff_code]
+    if charge is None:
+        return 0.0  # Energy-only tariff (e.g. 6900, 96200) — no demand charge
     if isinstance(charge, dict):
         charge_per_kw_per_month = charge.get(tou, 0.0)
     else:
@@ -578,6 +594,11 @@ def get_periods(tariff_code: str, interval_time=None):
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
+    if tariff.get('seasonal'):
+        when = interval_time if interval_time is not None else datetime.now(ZoneInfo(time_zone()))
+        season = 'periods_summer' if _is_summer(when) else 'periods_non_summer'
+        return tariff[season]
+
     return tariff['periods']
 
 def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
@@ -614,9 +635,10 @@ def convert_two_way_tariff(interval_datetime: datetime, rrp: float, is_export: b
         Off-Peak: 09:00-15:00  → 0.434 c/kWh
         Shoulder: all other    → 6.069 c/kWh  (no peak period)
 
-    Export periods:
-      Summer:     17:00-20:00  → -12.195 c/kWh (reward/credit)
-      Non-Summer: 11:00-13:00  → +2.210 c/kWh (charge)
+    Export periods (feed-in convention: the return value is the customer's
+    sell price, so a reward raises it and a charge lowers it):
+      Summer:     17:00-20:00  → +12.195 c/kWh (reward/credit)
+      Non-Summer: 11:00-13:00  → -2.210 c/kWh (charge)
                   10:00-11:00  → 0 (BEL exempt)
       All other:               → 0 c/kWh
 
@@ -640,9 +662,9 @@ def convert_two_way_tariff(interval_datetime: datetime, rrp: float, is_export: b
 
     if is_export:
         if summer and time(17, 0) <= t < time(20, 0):
-            network = -12.195  # export reward (credit)
+            network = 12.195  # export reward (credit) — raises the sell price
         elif not summer and time(11, 0) <= t < time(13, 0):
-            network = 2.210   # export charge
+            network = -2.210  # export charge — lowers the sell price
         else:
             network = 0.0     # no charge/reward
         return rrp_c_kwh + network
