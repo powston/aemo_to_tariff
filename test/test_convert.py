@@ -192,3 +192,15 @@ class TestTariffConversions(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    def test_get_periods_threads_interval_time(self):
+        # Package-level get_periods must pass interval_time through so
+        # seasonal tariffs (Energex 96200) return the right season.
+        from aemo_to_tariff import get_periods
+        from zoneinfo import ZoneInfo
+        summer = datetime(2027, 1, 15, 12, 0, tzinfo=ZoneInfo('Australia/Brisbane'))
+        names = {p[0] for p in get_periods('Energex', '96200', summer)}
+        self.assertIn('Peak', names)
+        winter = datetime(2026, 9, 1, 12, 0, tzinfo=ZoneInfo('Australia/Brisbane'))
+        names = {p[0] for p in get_periods('Energex', '96200', winter)}
+        self.assertNotIn('Peak', names)

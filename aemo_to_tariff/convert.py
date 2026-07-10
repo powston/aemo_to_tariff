@@ -247,13 +247,15 @@ def estimate_demand_fee(interval_time, network, tariff, demand_kw):
     else:
         return 0.0
 
-def get_periods(network, tariff: str):
+def get_periods(network, tariff: str, interval_time=None):
     """
     Get the periods for a given network and tariff.
 
     Parameter:
     - network (str): The name of the network (e.g., 'Energex', 'Ausgrid', 'Evoenergy').
     - tariff (str): The tariff code.
+    - interval_time (datetime, optional): Selects the price schedule (and
+      season for seasonal tariffs). Defaults to now.
 
     Returns:
     - list: A list of periods for the given tariff.
@@ -261,33 +263,33 @@ def get_periods(network, tariff: str):
     network = network.lower()
 
     if network == 'energex':
-        return energex.get_periods(tariff)
+        return energex.get_periods(tariff, interval_time)
     elif network == 'ausgrid':
-        return ausgrid.get_periods(tariff)
+        return ausgrid.get_periods(tariff, interval_time)
     elif network == 'ergon':
-        return ausgrid.get_periods(tariff)
+        return ausgrid.get_periods(tariff, interval_time)
     elif network == 'evoenergy':
-        return evoenergy.get_periods(tariff)
+        return evoenergy.get_periods(tariff, interval_time)
     elif network == 'sapn':
-        return sapower.get_periods(tariff)
+        return sapower.get_periods(tariff, interval_time)
     elif network == 'tasnetworks':
-        return tasnetworks.get_periods(tariff)
+        return tasnetworks.get_periods(tariff, interval_time)
     elif network == 'endeavour':
-        return endeavour.get_periods(tariff)
+        return endeavour.get_periods(tariff, interval_time)
     elif network == 'essential':
-        return essential.get_periods(tariff)
+        return essential.get_periods(tariff, interval_time)
     elif network == 'victoria':
-        return victoria.get_periods(tariff)
+        return victoria.get_periods(tariff, interval_time)
     elif network == 'jemena':
-        return jemena.get_periods(tariff)
+        return jemena.get_periods(tariff, interval_time)
     elif network == 'powercor':
-        return powercor.get_periods(tariff)
+        return powercor.get_periods(tariff, interval_time)
     elif network == 'united':
-        return united.get_periods(tariff)
+        return united.get_periods(tariff, interval_time)
     elif network == 'ausnet':
-        return ausnet.get_periods(tariff)
+        return ausnet.get_periods(tariff, interval_time)
     else:
-        return energex.get_periods(tariff)
+        return energex.get_periods(tariff, interval_time)
 
 
 def battery_tariffs(network, customer_type: str):
