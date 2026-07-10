@@ -189,10 +189,6 @@ class TestTariffConversions(unittest.TestCase):
         interval_time = datetime.strptime('2024-07-05 02:00+09:30', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(spot_to_tariff(interval_time, 'tasnetworks', 'TAS93', 100), 14.537, 2)
 
-
-if __name__ == '__main__':
-    unittest.main()
-
     def test_get_periods_threads_interval_time(self):
         # Package-level get_periods must pass interval_time through so
         # seasonal tariffs (Energex 96200) return the right season.
@@ -204,3 +200,16 @@ if __name__ == '__main__':
         winter = datetime(2026, 9, 1, 12, 0, tzinfo=ZoneInfo('Australia/Brisbane'))
         names = {p[0] for p in get_periods('Energex', '96200', winter)}
         self.assertNotIn('Peak', names)
+
+    def test_energex_96200_demand_fee_is_zero(self):
+        # Energy-only trial tariff: the package demand-fee APIs must return 0,
+        # not raise TypeError on the None demand-charge entry.
+        from aemo_to_tariff import calculate_demand_fee, estimate_demand_fee
+        from zoneinfo import ZoneInfo
+        interval_time = datetime(2026, 9, 1, 18, 0, tzinfo=ZoneInfo('Australia/Brisbane'))
+        self.assertEqual(calculate_demand_fee('Energex', '96200', 5.0, interval_time=interval_time), 0.0)
+        self.assertEqual(estimate_demand_fee(interval_time, 'Energex', '96200', 5.0), 0.0)
+
+
+if __name__ == '__main__':
+    unittest.main()

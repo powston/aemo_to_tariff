@@ -541,6 +541,8 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
         return 0.0  # Return 0 if the tariff doesn't have a demand charge
 
     charge = charges[tariff_code]
+    if charge is None:
+        return 0.0  # Energy-only tariff (e.g. 6900, 96200) — no demand charge
     if isinstance(charge, dict):
         charge_per_kw_per_month = charge.get(tou, 0.0)
     else:
