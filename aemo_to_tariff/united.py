@@ -90,10 +90,12 @@ tariffs_2025_26 = {
     }
 }
 
-# AER 2026–27 consolidated stakeholder report (8 May 2026).
+# AER 2026–27 consolidated stakeholder report (8 May 2026). Only URSTOU, LVS1R, URCER, LVDED available to residential customers in 2026-27.
+# https://media.unitedenergy.com.au/factsheets/2026-27_Retailer-FAQ-United-Energy.pdf URTOU/FURTOU, RESKW1R, URDS/FURDS migrate to URSTOU. 
+# URCER excluded from tariff list below due to complicated charges. 
 tariffs_2026_27 = {
     'D1': {
-        'name': 'Residential Single Rate',
+        'name': 'Residential Single Rate (LVS1R)',
         'periods': [
             ('Anytime', time(0, 0), time(23, 59), 9.720)
         ]
@@ -107,45 +109,46 @@ tariffs_2026_27 = {
     'URTOU': {
         'name': 'Residential TOU (URSTOU)',
         'periods': [
-            ('Off-peak', time(0, 0), time(15, 0), 5.220),
-            ('Peak', time(15, 0), time(21, 0), 20.920),
+            ('Off-peak', time(0, 0), time(11, 0), 5.220),
+            ('Saver', time(11, 0), time(16, 0), 1.000),
+            ('Peak', time(16, 0), time(21, 0), 20.920),
             ('Off-peak', time(21, 0), time(23, 59), 5.220),
         ]
     },
     'URSTOU': {
         'name': 'Residential TOU',
         'periods': [
-            ('Off-peak', time(0, 0), time(15, 0), 5.220),
-            ('Peak', time(15, 0), time(21, 0), 20.920),
+            ('Off-peak', time(0, 0), time(11, 0), 5.220),
+            ('Saver', time(11, 0), time(16, 0), 1.000),
+            ('Peak', time(16, 0), time(21, 0), 20.920),
             ('Off-peak', time(21, 0), time(23, 59), 5.220),
         ]
     },
     'FURTOU': {
-        'name': 'Residential TOU',
+        'name': 'Residential TOU (URSTOU)',
         'periods': [
-            ('Off-peak', time(0, 0), time(15, 0), 5.220),
-            ('Peak', time(15, 0), time(21, 0), 20.920),
+            ('Off-peak', time(0, 0), time(11, 0), 5.220),
+            ('Saver', time(11, 0), time(16, 0), 1.000),
+            ('Peak', time(16, 0), time(21, 0), 20.920),
             ('Off-peak', time(21, 0), time(23, 59), 5.220),
         ]
     },
     'FURDS': {
-        'name': 'Residential TOU',
+        'name': 'Residential TOU (URSTOU)',
         'periods': [
-            ('Off-peak', time(0, 0), time(15, 0), 6.71),
-            ('Solar-Soaker', time(10, 0), time(15, 0), 0.0),
-            ('Off-peak', time(15, 0), time(16, 0), 6.71),
-            ('Peak', time(16, 0), time(21, 0), 18.82),
-            ('Off-peak', time(21, 0), time(23, 59), 6.71),
+            ('Off-peak', time(0, 0), time(11, 0), 5.220),
+            ('Saver', time(11, 0), time(16, 0), 1.000),
+            ('Peak', time(16, 0), time(21, 0), 20.920),
+            ('Off-peak', time(21, 0), time(23, 59), 5.220),
         ]
     },
     'URDS': {
-        'name': 'Residential TOU',
+        'name': 'Residential TOU (URSTOU)',
         'periods': [
-            ('Off-peak', time(0, 0), time(15, 0), 6.71),
-            ('Solar-Soaker', time(10, 0), time(15, 0), 0.0),
-            ('Off-peak', time(15, 0), time(16, 0), 6.71),
-            ('Peak', time(16, 0), time(21, 0), 18.82),
-            ('Off-peak', time(21, 0), time(23, 59), 6.71),
+            ('Off-peak', time(0, 0), time(11, 0), 5.220),
+            ('Saver', time(11, 0), time(16, 0), 1.000),
+            ('Peak', time(16, 0), time(21, 0), 20.920),
+            ('Off-peak', time(21, 0), time(23, 59), 5.220),
         ]
     },
     'NDMO21': {
