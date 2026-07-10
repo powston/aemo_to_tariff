@@ -159,3 +159,18 @@ class TestEssentualPower(unittest.TestCase):
         price_outside = essential.convert_feed_in_tariff(dt_outside, 'BLNREX2', 0.0)
         self.assertGreater(price_inside, price_outside)
 
+
+    def test_blnbss1_full_day_coverage(self):
+        # Business Sun Soaker follows the SS window: Peak 7-10 and 15-22 every
+        # day, Off-Peak all other times. A noon interval must price at
+        # Off-Peak, not fall back to the first (Peak) period.
+        noon = datetime(2026, 1, 19, 12, 0, tzinfo=ZoneInfo(time_zone()))  # Monday
+        self.assertAlmostEqual(convert(noon, 'BLNBSS1', 100.0), 10.0 + 8.1015, places=3)
+        morning_peak = datetime(2026, 1, 19, 8, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(morning_peak, 'BLNBSS1', 100.0), 10.0 + 17.9646, places=3)
+        # Sun Soaker peak is everyday — no weekday gate.
+        sat_evening = datetime(2026, 1, 17, 18, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(sat_evening, 'BLNBSS1', 100.0), 10.0 + 17.9646, places=3)
+        # 2026-27 rates, same window shape.
+        noon_27 = datetime(2026, 8, 17, 12, 0, tzinfo=ZoneInfo(time_zone()))
+        self.assertAlmostEqual(convert(noon_27, 'BLNBSS1', 100.0), 10.0 + 8.5988, places=3)
