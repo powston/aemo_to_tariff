@@ -389,13 +389,17 @@ tariffs_2026_27 = {
             'ExportCharge': -2.210,
             'ExportReward': 12.195,
         },
-        # Import periods for get_periods(); Peak applies Nov-Mar only — see
-        # convert_two_way_tariff for the seasonal dispatch.
-        'periods': [
+        # get_periods() picks the season-appropriate list; the 17:00-20:00
+        # Peak only exists Nov-Mar and is Shoulder the rest of the year.
+        'periods_summer': [
             ('Peak', time(17, 0), time(20, 0), 19.533),
             ('Off-Peak', time(9, 0), time(15, 0), 0.434),
             ('Shoulder', time(15, 0), time(17, 0), 6.069),
             ('Shoulder', time(20, 0), time(9, 0), 6.069),
+        ],
+        'periods_non_summer': [
+            ('Off-Peak', time(9, 0), time(15, 0), 0.434),
+            ('Shoulder', time(15, 0), time(9, 0), 6.069),
         ]
     },
 }
@@ -587,6 +591,11 @@ def get_periods(tariff_code: str, interval_time=None):
     tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
+
+    if tariff.get('seasonal'):
+        when = interval_time if interval_time is not None else datetime.now(ZoneInfo(time_zone()))
+        season = 'periods_summer' if _is_summer(when) else 'periods_non_summer'
+        return tariff[season]
 
     return tariff['periods']
 

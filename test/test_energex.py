@@ -126,14 +126,15 @@ class TestTwoWayTariff(unittest.TestCase):
         # Other tariffs remain spot-only.
         self.assertAlmostEqual(energex.convert_feed_in_tariff(summer, '6900X', 100.0), 10.0, places=2)
 
-    def test_get_periods_96200(self):
-        # get_periods must not raise for the seasonal trial tariff.
-        interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
-        periods = energex.get_periods('96200', interval_time=interval_time)
-        names = {p[0] for p in periods}
-        self.assertIn('Peak', names)
-        self.assertIn('Off-Peak', names)
-        self.assertIn('Shoulder', names)
+    def test_get_periods_96200_seasonal(self):
+        # get_periods must return season-specific periods: the 17:00-20:00
+        # Peak only exists Nov-Mar; outside summer that window is Shoulder.
+        summer = datetime(2027, 1, 15, 12, 0, tzinfo=BRISBANE)
+        names = {p[0] for p in energex.get_periods('96200', interval_time=summer)}
+        self.assertEqual(names, {'Peak', 'Off-Peak', 'Shoulder'})
+        non_summer = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
+        names = {p[0] for p in energex.get_periods('96200', interval_time=non_summer)}
+        self.assertEqual(names, {'Off-Peak', 'Shoulder'})
 
     def test_estimate_demand_fee_96200_is_zero(self):
         # Energy-only trial tariff must not fall back to the 3700 demand charge.
