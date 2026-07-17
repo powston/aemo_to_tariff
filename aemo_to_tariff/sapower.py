@@ -36,7 +36,10 @@ def battery_tariffs(customer_type: str):
     - str: The battery tariff code.
     """
     if customer_type == 'Residential':
-        return {'import': ['RELE2W', 'RESELEX', 'RESELE'], 'export': ['RESELE', 'RESELEX', 'RELE2W']}
+        # RESELEX is export-only (it has no entry in tariffs_*), so it belongs on
+        # the export side only — listing it under 'import' made get_periods() raise
+        # ValueError for any caller iterating the import codes.
+        return {'import': ['RELE2W', 'RESELE'], 'export': ['RESELE', 'RESELEX', 'RELE2W']}
     elif customer_type == 'Business':
         return {'import': ['SBELE'], 'export': ['SBELE']}
     else:
