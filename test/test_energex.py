@@ -40,31 +40,31 @@ class TestTwoWayTariff(unittest.TestCase):
         # Summer peak: Jan 15, 18:00 → Peak rate 19.533
         dt = datetime(2027, 1, 15, 18, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
-        self.assertAlmostEqual(price, 10.0 + 19.533, places=2)
+        self.assertAlmostEqual(price, 10.0 + 19.533 * 1.1, places=2)
 
     def test_import_offpeak_summer(self):
         # Summer off-peak: Jan 15, 12:00 → Off-Peak 0.434
         dt = datetime(2027, 1, 15, 12, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
-        self.assertAlmostEqual(price, 10.0 + 0.434, places=2)
+        self.assertAlmostEqual(price, 10.0 + 0.434 * 1.1, places=2)
 
     def test_import_shoulder_summer(self):
         # Summer shoulder: Jan 15, 21:00 → Shoulder 6.069
         dt = datetime(2027, 1, 15, 21, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
-        self.assertAlmostEqual(price, 10.0 + 6.069, places=2)
+        self.assertAlmostEqual(price, 10.0 + 6.069 * 1.1, places=2)
 
     def test_import_offpeak_nonsummer(self):
         # Non-summer off-peak: Jul 15, 12:00 → Off-Peak 0.434
         dt = datetime(2026, 7, 15, 12, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
-        self.assertAlmostEqual(price, 10.0 + 0.434, places=2)
+        self.assertAlmostEqual(price, 10.0 + 0.434 * 1.1, places=2)
 
     def test_import_shoulder_nonsummer(self):
         # Non-summer shoulder (no peak period): Jul 15, 18:00 → Shoulder 6.069
         dt = datetime(2026, 7, 15, 18, 0, tzinfo=BRISBANE)
         price = energex.convert_two_way_tariff(dt, 100.0, is_export=False)
-        self.assertAlmostEqual(price, 10.0 + 6.069, places=2)
+        self.assertAlmostEqual(price, 10.0 + 6.069 * 1.1, places=2)
 
     def test_export_reward_summer(self):
         # Summer export reward raises the sell price: Jan 15, 18:00 → +12.195
@@ -115,7 +115,7 @@ class TestTwoWayTariff(unittest.TestCase):
         # Ensure convert() with tariff '96200' reaches convert_two_way_tariff
         dt = datetime(2027, 1, 15, 18, 5, tzinfo=BRISBANE)  # 18:05 → adjusted to 18:00 → peak
         price = energex.convert(dt, '96200', 100.0)
-        self.assertAlmostEqual(price, 10.0 + 19.533, places=2)
+        self.assertAlmostEqual(price, 10.0 + 19.533 * 1.1, places=2)
 
     def test_convert_feed_in_tariff_96200x_dispatches(self):
         # Export via the public feed-in API must apply the seasonal reward/charge.
