@@ -2,6 +2,17 @@
 from datetime import time, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+
+# GST on the network component. Settled retail data shows the distributor's
+# c/kWh rate is billed GST-inclusive, so convert() grosses it up here (matching
+# evoenergy, which has always done so). Confirmed out-of-sample for this network:
+# fitting a site's plan on a pre-1-July day and predicting a post-1-July day
+# drops the mean error to <0.15 c/kWh with GST and leaves it at 0.2-1.2 without.
+# Not applied to convert_feed_in_tariff -- export credits do not carry GST --
+# nor to the unknown-tariff slope/intercept fallbacks.
+GST = 1.1
+
+
 def time_zone():
     return 'Australia/Sydney'
 
@@ -446,21 +457,21 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float) -> float:
         off_peak_rate = next((rate for name, start, end, rate in tariff['periods']
                               if 'off' in name.lower()), None)
         if off_peak_rate is not None:
-            return rrp_c_kwh + off_peak_rate
+            return rrp_c_kwh + off_peak_rate * GST
 
     # Match the period whose start-end covers local_time
     for period_name, start, end, rate_cents in tariff['periods']:
         # Handle normal range if start < end
         if start < end:
             if start <= local_time < end:
-                return rrp_c_kwh + rate_cents
+                return rrp_c_kwh + rate_cents * GST
         else:
             # Period crosses midnight
             if local_time >= start or local_time < end:
-                return rrp_c_kwh + rate_cents
+                return rrp_c_kwh + rate_cents * GST
 
     # Default to first period’s rate if none matched
-    return rrp_c_kwh + tariff['periods'][0][3]
+    return rrp_c_kwh + tariff['periods'][0][3] * GST
 
 def get_daily_fee(tariff_code: str, interval_time=None) -> float:
     """

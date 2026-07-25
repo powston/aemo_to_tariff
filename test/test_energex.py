@@ -17,13 +17,13 @@ class TestEnergex(unittest.TestCase):
         # Before 1 July 2026 transition: uses 2025–26 prices (Overnight 4.868 c/kWh)
         interval_time = datetime(2023, 7, 15, 10, 0, tzinfo=BRISBANE)
         price = energex.convert(interval_time, '6900', 100.0)
-        self.assertAlmostEqual(price, 14.868, places=2)
+        self.assertAlmostEqual(price, 15.3548, places=2)
 
     def test_convert_2026_27(self):
         # On/after 1 July 2026: uses 2026–27 prices (Overnight 6.069 c/kWh)
         interval_time = datetime(2026, 7, 15, 10, 0, tzinfo=BRISBANE)
         price = energex.convert(interval_time, '6900', 100.0)
-        self.assertAlmostEqual(price, 16.069, places=2)
+        self.assertAlmostEqual(price, 16.6759, places=2)
 
     def test_get_daily_fee_2025_26(self):
         interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)

@@ -49,16 +49,16 @@ class TestErgonFunctions(unittest.TestCase):
     def test_ERTDEMCT1_tariff_2025_26(self):
         # 11:30 RRP $-31.99/MWh — falls back to ERTOUET1 off-peak (0.524 c/kWh in 2025–26)
         interval_datetime = datetime(2025, 4, 5, 11, 30, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMCT1', rrp=-31.99), -2.675, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMCT1', rrp=-31.99), -2.6226, places=2)
 
     def test_ERTDEMCT1_tariff_2026_27(self):
         # After transition off-peak rate drops to 0.277 c/kWh
         interval_datetime = datetime(2026, 7, 5, 11, 30, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMCT1', rrp=-31.99), -2.922, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMCT1', rrp=-31.99), -2.8943, places=2)
 
     def test_ERTDEMXT1_tariff(self):
         interval_datetime = datetime(2025, 4, 5, 11, 30, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMXT1', rrp=-31.99), -2.675, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMXT1', rrp=-31.99), -2.6226, places=2)
 
     def test_ERTDEMXT1_demand_fee(self):
         # $7/kW demand applies in both schedules (residential demand unchanged)
@@ -69,21 +69,21 @@ class TestErgonFunctions(unittest.TestCase):
     def test_ERTOUET1_tariff_2025_26(self):
         # Off-peak window, 2025–26
         interval_datetime = datetime(2025, 4, 5, 11, 30, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'ERTOUET1', rrp=-31.99), -2.675, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'ERTOUET1', rrp=-31.99), -2.6226, places=2)
         # Peak window, 2025–26: 18.564 c/kWh
         interval_datetime = datetime(2025, 4, 5, 18, 30, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'ERTOUET1', rrp=31.99), 21.763, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'ERTOUET1', rrp=31.99), 23.6194, places=2)
 
     def test_ERTOUET1_tariff_2026_27(self):
         # Peak window, 2026–27: 18.387 c/kWh
         interval_datetime = datetime(2026, 7, 5, 18, 30, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'ERTOUET1', rrp=31.99), 21.586, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'ERTOUET1', rrp=31.99), 23.4247, places=2)
 
     def test_WRTOUET1_tariff(self):
         interval_datetime = datetime(2025, 4, 5, 12, 0, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'WRTOUET1', -31.99), -2.675, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'WRTOUET1', -31.99), -2.6226, places=2)
 
     def test_MRTOUET4_tariff(self):
         interval_datetime = datetime(2025, 4, 5, 12, 0, tzinfo=BRISBANE)
-        self.assertAlmostEqual(convert(interval_datetime, 'MRTOUET4', -31.99), -2.675, places=2)
+        self.assertAlmostEqual(convert(interval_datetime, 'MRTOUET4', -31.99), -2.6226, places=2)
     

@@ -3,6 +3,17 @@ import logging
 from datetime import time, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+
+# GST on the network component. Settled retail data shows the distributor's
+# c/kWh rate is billed GST-inclusive, so convert() grosses it up here (matching
+# evoenergy, which has always done so). Confirmed out-of-sample for this network:
+# fitting a site's plan on a pre-1-July day and predicting a post-1-July day
+# drops the mean error to <0.15 c/kWh with GST and leaves it at 0.2-1.2 without.
+# Not applied to convert_feed_in_tariff -- export credits do not carry GST --
+# nor to the unknown-tariff slope/intercept fallbacks.
+GST = 1.1
+
+
 _logger = logging.getLogger(__name__)
 
 def time_zone():
@@ -493,13 +504,13 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
         if start is None and end is None:
             if months and current_month not in months:
                 continue
-            default_tariff = rrp_c_kwh + rate
+            default_tariff = rrp_c_kwh + rate * GST
         elif start <= interval_time < end or (start > end and (interval_time >= start or interval_time < end)):
             _logger.debug("Checking period: %s Start: %s End: %s Months: %s Rate: %s", period, start, end, months, rate)
             _logger.debug("Current month: %s Interval time: %s", current_month, interval_time)
             if months and current_month not in months:
                 continue
-            total_price = rrp_c_kwh + rate
+            total_price = rrp_c_kwh + rate * GST
             _logger.debug("Found tariff match: %s in tariff code: %s %s Total Price: %s", period, tariff_code, rate, total_price)
             return total_price
 

@@ -19,19 +19,19 @@ class TestTariffConversions(unittest.TestCase):
     def test_energex_tariff_6970(self):
         # Off peak (Day, solar window) — 2024 uses 2025–26 schedule
         interval_time = datetime.strptime('2024-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 100, 1, 1), 10.63, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 100, 1, 1), 10.6776, 2)
 
         # Peak (Evening)
         interval_time = datetime.strptime('2024-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6970', 100, 1, 1), 29.521, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6970', 100, 1, 1), 31.4577, 2)
 
         # Shoulder (Overnight)
         interval_time = datetime.strptime('2024-07-05 02:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 100, 1, 1), 15.022, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 100, 1, 1), 15.5088, 2)
 
         # With loss factor
         interval_time = datetime.strptime('2024-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 200, 1.05, 1.01), 22.0126, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 200, 1.05, 1.01), 22.0602, 2)
 
         # Demand estimate (2025–26: 3900 peak demand = 5.127 $/kW)
         interval_time = datetime.strptime('2024-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
@@ -41,7 +41,7 @@ class TestTariffConversions(unittest.TestCase):
     def test_energex_tariff_6900_2026_27(self):
         # Post-transition: Day rate drops 0.476 → 0.434, Evening 19.367 → 19.533
         interval_time = datetime.strptime('2026-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 100, 1, 1), 10.588, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Energex', '6900', 100, 1, 1), 10.6314, 2)
         # Demand for 3950 jumps from 5.127 to 7.0 $/kW
         interval_time = datetime.strptime('2026-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(estimate_demand_fee(interval_time, 'Energex', '3950', 5.5), 38.5, 2)
@@ -59,7 +59,7 @@ class TestTariffConversions(unittest.TestCase):
     def test_ergon_tariff_017(self):
         # With loss factor (Off-Peak solar window) — 2024 uses 2025–26 schedule (0.524 c/kWh)
         interval_time = datetime.strptime('2024-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ergon', 'ERTOUET1', 200, 1.05, 1.01), 22.06, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ergon', 'ERTOUET1', 200, 1.05, 1.01), 22.113, 2)
 
         # Demand estimate
         interval_time = datetime.strptime('2024-07-05 18:00+10:00', '%Y-%m-%d %H:%M%z')
@@ -69,7 +69,7 @@ class TestTariffConversions(unittest.TestCase):
     def test_ergon_tariff_017_2026_27(self):
         # Post-transition off-peak drops 0.524 → 0.277
         interval_time = datetime.strptime('2026-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ergon', 'ERTOUET1', 200, 1.05, 1.01), 21.8136, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ergon', 'ERTOUET1', 200, 1.05, 1.01), 21.8413, 2)
 
     def test_evoenergy_tariff_017(self):
         # Off peak
@@ -89,9 +89,9 @@ class TestTariffConversions(unittest.TestCase):
 
     def test_ausgrid_tariff_EA116(self):
         interval_time = datetime.strptime('2024-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ausgrid', 'EA116', 100, 1, 1), 12.491, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ausgrid', 'EA116', 100, 1, 1), 12.7247, 2)
         interval_time = datetime.strptime('2024-07-05 14:00+10:00', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ausgrid', 'EA116', 200, 1, 1), 22.645, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'Ausgrid', 'EA116', 200, 1, 1), 22.8787, 2)
         # Demand estimate
         interval_time = datetime.strptime('2024-07-05 18:00+11:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(estimate_demand_fee(interval_time, 'Ausgrid', 'EA025', 5.5), 0.0, 2)
@@ -166,11 +166,11 @@ class TestTariffConversions(unittest.TestCase):
     def test_sapn_tariff_RTOU(self):
         # Peak
         interval_time = datetime.strptime('2024-07-05 18:00+09:30', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'SAPN', 'RTOU', 100), 29.8692, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'SAPN', 'RTOU', 100), 31.7642, 2)
 
         # Off-peak
         interval_time = datetime.strptime('2024-07-05 02:00+09:30', '%Y-%m-%d %H:%M%z')
-        self.assertAlmostEqual(spot_to_tariff(interval_time, 'SAPN', 'RTOU', 100), 20.3892, 2)
+        self.assertAlmostEqual(spot_to_tariff(interval_time, 'SAPN', 'RTOU', 100), 21.3362, 2)
 
     def test_tasnetworks_daily_fee(self):
         self.assertAlmostEqual(get_daily_fee('tasnetworks', 'TAS93'), 80.544, 3)  # cents/day
