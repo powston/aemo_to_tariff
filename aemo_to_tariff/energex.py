@@ -680,7 +680,11 @@ def convert_two_way_tariff(interval_datetime: datetime, rrp: float, is_export: b
             network = 0.0     # no charge/reward
         return rrp_c_kwh + network
 
-    # Import
+    # Import. These are the same distributor rates as the main energex table
+    # (0.434 / 6.069 / 19.533), which settled data shows are stored ex-GST and
+    # billed GST-inclusive, so the import side is grossed up like every other
+    # energex import tariff. The export branch above is left alone -- feed-in
+    # credits carry no GST.
     if summer and time(17, 0) <= t < time(20, 0):
         network = 19.533  # Peak
     elif time(9, 0) <= t < time(15, 0):
@@ -688,7 +692,7 @@ def convert_two_way_tariff(interval_datetime: datetime, rrp: float, is_export: b
     else:
         network = 6.069   # Shoulder (summer: 20-09 + 15-17; non-summer: 15-09)
 
-    return rrp_c_kwh + network
+    return rrp_c_kwh + network * GST
 
 
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
