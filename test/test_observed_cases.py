@@ -85,10 +85,14 @@ OBSERVED_CASES = [
     Case('essential', 'BLNREX2', '2026-07-09T12:30:00+10:00', 73.0, 1, 6.4723, 5.9, SELL, 2.0, 'Day(09-16)'),
     Case('essential', 'BLNREX2', '2026-07-09T18:30:00+10:00', 160.9, 1, 27.8112, 26.7, SELL, 2.0, 'Evening(16-21)'),
     Case('essential', 'BLNREX2', '2026-07-09T06:00:00+10:00', 115.4, 1, 11.54, 10.7, SELL, 2.0, 'Overnight(21-09)'),
-    # --- evoenergy: import 017 / export 1999 -- site 881 (market 2.0)
-    Case('evoenergy', '017', '2026-07-09T09:00:00+10:00', 52.0, 1.1, 23.462, 28.1, BUY, 2.0, 'Off-peak'),
-    Case('evoenergy', '017', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 37.3567, 42.3, BUY, 2.0, 'Peak'),
-    Case('evoenergy', '017', '2026-07-09T13:00:00+10:00', 81.5, 1.1, 11.06, 15.8, BUY, 2.0, 'Solar Soak'),
+    # --- evoenergy: import 017 / export 1999 (market 2.0)
+    # Expected values re-based when the 2026-27 017 rates were corrected (every
+    # period was 3.035 c/kWh ex-GST low). That correction also closed these three
+    # against the LocalVolts ground truth -- gaps went 2.6-2.9c -> 0.4-0.7c -- which
+    # is an independent confirmation from a different day to the one that found it.
+    Case('evoenergy', '017', '2026-07-09T09:00:00+10:00', 52.0, 1.1, 26.8005, 28.1, BUY, 2.0, 'Off-peak'),
+    Case('evoenergy', '017', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 40.6952, 42.3, BUY, 2.0, 'Peak'),
+    Case('evoenergy', '017', '2026-07-09T13:00:00+10:00', 81.5, 1.1, 14.3985, 15.8, BUY, 2.0, 'Solar Soak'),
     Case('evoenergy', '1999', '2026-07-09T12:30:00+10:00', 73.0, 1, 7.3, 7.6, SELL, 2.0, 'Day(09-16)'),
     Case('evoenergy', '1999', '2026-07-09T18:30:00+10:00', 160.9, 1, 16.09, 16.7, SELL, 2.0, 'Evening(16-21)'),
     Case('evoenergy', '1999', '2026-07-09T06:00:00+10:00', 115.4, 1, 11.54, 12.0, SELL, 2.0, 'Overnight(21-09)'),
@@ -199,6 +203,17 @@ class TestKnownDiscrepancies(unittest.TestCase):
         # comes out ~54.2c (incl market) vs LV 57.2c.
         self._assert_matches_localvolts(
             Case('ausgrid', 'EA025', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 52.2192, 57.2, BUY, 2.0, 'Peak'))
+
+    def test_evoenergy_017_reconciles_after_the_2026_27_rate_fix(self):
+        """Not expectedFailure: all three evoenergy 017 windows now land inside
+        GROUND_TRUTH_TOL of the LocalVolts settled price. Before the 2026-27 rate
+        correction they were 2.6-2.9 c/kWh short, i.e. outside it. This locks the
+        reconciliation so a future rate edit that reopens the gap fails here.
+        """
+        for case in OBSERVED_CASES:
+            if case.network == 'evoenergy' and case.direction == BUY:
+                with self.subTest(window=case.window):
+                    self._assert_matches_localvolts(case)
 
     @unittest.expectedFailure
     def test_energex_6900_day_market_cost_too_high(self):

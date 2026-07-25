@@ -125,6 +125,12 @@ tariffs_2025_26 = {
 }
 
 # AER 2026–27 consolidated stakeholder report (8 May 2026).
+#
+# CAUTION: the 017/018 rates from this source were transcribed from the wrong
+# column (see the note on 017 below). Only 017 has since been reconciled against
+# settled retail data. The 015/016/026/090 rates and every 'fixed_daily_charge'
+# here still come from that original transcription and are unverified -- treat a
+# 2026-27 rate that fell relative to 2025-26 as suspect until checked.
 tariffs_2026_27 = {
     '015': {
         'name': 'Residential TOU Network (closed)',
@@ -152,30 +158,41 @@ tariffs_2026_27 = {
         ],
         'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
     },
+    # 017/018 rates were first transcribed 3.035 c/kWh too low on EVERY period --
+    # a distribution-only column, missing the flat non-distribution component. The
+    # level error is invisible to any relative check (all periods shifted equally,
+    # so period ratios and the shape of a day still look right); it was caught by
+    # reconciling against settled pass-through retail prices, where the implied
+    # retailer fee jumped from ~1.22 to ~4.56 c/kWh across the 1 July boundary
+    # while the same retailer's fee on another network stayed flat. See
+    # test_evoenergy.TestEvoenergy2026RateLevel.
     '017': {
         'name': 'New Residential TOU Network',
         'periods': [
-            ('Peak', time(7, 0), time(9, 0), 16.049),
-            ('Peak', time(17, 0), time(21, 0), 16.049),
-            ('Solar Soak', time(11, 0), time(15, 0), 1.779),
-            ('Off-peak', time(21, 0), time(7, 0), 4.351),
-            ('Off-peak', time(9, 0), time(11, 0), 4.351),
-            ('Off-peak', time(15, 0), time(17, 0), 4.351)
+            ('Peak', time(7, 0), time(9, 0), 19.084),
+            ('Peak', time(17, 0), time(21, 0), 19.084),
+            ('Solar Soak', time(11, 0), time(15, 0), 4.814),
+            ('Off-peak', time(21, 0), time(7, 0), 7.386),
+            ('Off-peak', time(9, 0), time(11, 0), 7.386),
+            ('Off-peak', time(15, 0), time(17, 0), 7.386)
         ],
         'fixed_daily_charge': 39.331,
         'peak_months': [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
+    # 018 carries the same energy rates as 017 (it did in 2025-26 too, differing
+    # only on the metering charge), so it takes the same correction. Inferred by
+    # parity -- unlike 017 there is no settled-data reconciliation behind it.
     '018': {
         'name': 'New Residential TOU Network XMC',
         'periods': [
-            ('Peak', time(7, 0), time(9, 0), 16.049),
-            ('Peak', time(17, 0), time(21, 0), 16.049),
-            ('Off-peak', time(7, 0), time(9, 0), 4.351),
-            ('Off-peak', time(17, 0), time(21, 0), 4.351),
-            ('Solar Soak', time(11, 0), time(15, 0), 1.779),
-            ('Off-peak', time(21, 0), time(7, 0), 4.351),
-            ('Off-peak', time(9, 0), time(11, 0), 4.351),
-            ('Off-peak', time(15, 0), time(17, 0), 4.351)
+            ('Peak', time(7, 0), time(9, 0), 19.084),
+            ('Peak', time(17, 0), time(21, 0), 19.084),
+            ('Off-peak', time(7, 0), time(9, 0), 7.386),
+            ('Off-peak', time(17, 0), time(21, 0), 7.386),
+            ('Solar Soak', time(11, 0), time(15, 0), 4.814),
+            ('Off-peak', time(21, 0), time(7, 0), 7.386),
+            ('Off-peak', time(9, 0), time(11, 0), 7.386),
+            ('Off-peak', time(15, 0), time(17, 0), 7.386)
         ],
         'fixed_daily_charge': 39.331,
         'peak_months': [11, 12, 1, 2, 3, 6, 7, 8]
