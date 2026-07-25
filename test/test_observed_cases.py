@@ -46,42 +46,42 @@ SELL = 'sell'
 # network, tariff, interval, rrp, dlf, expected_c_kwh, lv_observed, direction, market, window
 OBSERVED_CASES = [
     # --- ausgrid: import EA025 / export EA029 -- site 478 (market 2.0)
-    Case('ausgrid', 'EA025', '2026-07-09T09:00:00+10:00', 52.0, 1.1, 11.1651, 13.1, BUY, 2.0, 'Off-peak'),
-    Case('ausgrid', 'EA025', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 52.2192, 57.2, BUY, 2.0, 'Peak'),
+    Case('ausgrid', 'EA025', '2026-07-09T09:00:00+10:00', 52.0, 1.1, 11.7008, 13.1, BUY, 2.0, 'Off-peak'),
+    Case('ausgrid', 'EA025', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 55.4709, 57.2, BUY, 2.0, 'Peak'),
     Case('ausgrid', 'EA029', '2026-07-09T12:30:00+10:00', 73.0, 1, 6.07, 6.2, SELL, 2.0, 'Day(09-16)'),
     Case('ausgrid', 'EA029', '2026-07-09T18:30:00+10:00', 160.9, 1, 19.94, 20.5, SELL, 2.0, 'Evening(16-21)'),
     Case('ausgrid', 'EA029', '2026-07-09T06:00:00+10:00', 115.4, 1, 11.54, 11.9, SELL, 2.0, 'Overnight(21-09)'),
     # --- endeavour: import N71 / export N61 -- site 169 (market 2.0)
-    Case('endeavour', 'N71', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 34.907, 38.9, BUY, 2.0, 'High-season Peak'),
-    Case('endeavour', 'N71', '2026-07-09T08:00:00+10:00', 89.1, 1.1, 21.6859, 24.8, BUY, 2.0, 'Off Peak'),
-    Case('endeavour', 'N71', '2026-07-09T12:00:00+10:00', 78.6, 1.1, 13.3146, 15.6, BUY, 2.0, 'Solar Soak'),
+    Case('endeavour', 'N71', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 36.4274, 38.9, BUY, 2.0, 'High-season Peak'),
+    Case('endeavour', 'N71', '2026-07-09T08:00:00+10:00', 89.1, 1.1, 22.8593, 24.8, BUY, 2.0, 'Off Peak'),
+    Case('endeavour', 'N71', '2026-07-09T12:00:00+10:00', 78.6, 1.1, 13.7682, 15.6, BUY, 2.0, 'Solar Soak'),
     Case('endeavour', 'N61', '2026-07-09T12:30:00+10:00', 73.0, 1, 5.44, 7.8, SELL, 2.0, 'Day(09-16)'),
     Case('endeavour', 'N61', '2026-07-09T18:30:00+10:00', 160.9, 1, 19.5602, 20.8, SELL, 2.0, 'Evening(16-21)'),
     Case('endeavour', 'N61', '2026-07-09T06:00:00+10:00', 115.4, 1, 11.54, 12.4, SELL, 2.0, 'Overnight(21-09)'),
     # --- energex: import 6900 / export 9800 -- site 485 (market 4.25)
-    Case('energex', '6900', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1409, 9.4, BUY, 4.25, 'Day'),
-    Case('energex', '6900', '2026-07-09T18:30:00+10:00', 118.1, 1.1, 32.7241, 36.1, BUY, 4.25, 'Evening'),
-    Case('energex', '6900', '2026-07-09T07:00:00+10:00', 101.6, 1.1, 17.4171, 19.4, BUY, 4.25, 'Overnight'),
+    Case('energex', '6900', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1843, 9.4, BUY, 4.25, 'Day'),
+    Case('energex', '6900', '2026-07-09T18:30:00+10:00', 118.1, 1.1, 34.6774, 36.1, BUY, 4.25, 'Evening'),
+    Case('energex', '6900', '2026-07-09T07:00:00+10:00', 101.6, 1.1, 18.024, 19.4, BUY, 4.25, 'Overnight'),
     Case('energex', '9800', '2026-07-09T12:30:00+10:00', 63.3, 1, 6.33, 6.7, SELL, 4.25, 'Day(09-16)'),
     Case('energex', '9800', '2026-07-09T18:30:00+10:00', 118.1, 1, 11.81, 12.6, SELL, 4.25, 'Evening(16-21)'),
     Case('energex', '9800', '2026-07-09T06:00:00+10:00', 102.8, 1, 10.28, 10.9, SELL, 4.25, 'Overnight(21-09)'),
     # --- energex: import 6970 / export 9870 -- site 98 (market 2.0)
-    Case('energex', '6970', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1409, 9.4, BUY, 2.0, 'Day'),
-    Case('energex', '6970', '2026-07-09T18:30:00+10:00', 118.1, 1.1, 32.7241, 36.1, BUY, 2.0, 'Evening'),
-    Case('energex', '6970', '2026-07-09T07:00:00+10:00', 101.6, 1.1, 17.4171, 19.4, BUY, 2.0, 'Overnight'),
+    Case('energex', '6970', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1843, 9.4, BUY, 2.0, 'Day'),
+    Case('energex', '6970', '2026-07-09T18:30:00+10:00', 118.1, 1.1, 34.6774, 36.1, BUY, 2.0, 'Evening'),
+    Case('energex', '6970', '2026-07-09T07:00:00+10:00', 101.6, 1.1, 18.024, 19.4, BUY, 2.0, 'Overnight'),
     Case('energex', '9870', '2026-07-09T12:30:00+10:00', 61.4, 1, 6.14, 6.7, SELL, 2.0, 'Day(09-16)'),
     Case('energex', '9870', '2026-07-09T18:30:00+10:00', 118.1, 1, 11.81, 12.6, SELL, 2.0, 'Evening(16-21)'),
     Case('energex', '9870', '2026-07-09T06:00:00+10:00', 102.8, 1, 10.28, 10.9, SELL, 2.0, 'Overnight(21-09)'),
     # --- ergon: import ERTOUET1 / export NVG2 -- site 528 (market 2.0, no LocalVolts)
-    Case('ergon', 'ERTOUET1', '2026-07-09T12:25:00+10:00', 61.4, 1.1, 7.135, None, BUY, 2.0, 'Day(09-16)'),
-    Case('ergon', 'ERTOUET1', '2026-07-09T19:05:00+10:00', 120.7, 1.1, 31.8685, None, BUY, 2.0, 'Evening(16-21)'),
-    Case('ergon', 'ERTOUET1', '2026-07-09T06:30:00+10:00', 107.7, 1.1, 16.9524, None, BUY, 2.0, 'Overnight(21-09)'),
+    Case('ergon', 'ERTOUET1', '2026-07-09T12:25:00+10:00', 61.4, 1.1, 7.1627, None, BUY, 2.0, 'Day(09-16)'),
+    Case('ergon', 'ERTOUET1', '2026-07-09T19:05:00+10:00', 120.7, 1.1, 33.7072, None, BUY, 2.0, 'Evening(16-21)'),
+    Case('ergon', 'ERTOUET1', '2026-07-09T06:30:00+10:00', 107.7, 1.1, 17.4447, None, BUY, 2.0, 'Overnight(21-09)'),
     Case('ergon', 'NVG2', '2026-07-09T12:25:00+10:00', 61.4, 1, 6.14, None, SELL, 2.0, 'Day(09-16)'),
     Case('ergon', 'NVG2', '2026-07-09T19:05:00+10:00', 120.7, 1, 12.07, None, SELL, 2.0, 'Evening(16-21)'),
     Case('ergon', 'NVG2', '2026-07-09T06:30:00+10:00', 107.7, 1, 10.77, None, SELL, 2.0, 'Overnight(21-09)'),
     # --- essential: import BLNRSS2 / export BLNREX2 -- site 223 (market 2.0)
-    Case('essential', 'BLNRSS2', '2026-07-09T10:00:00+10:00', 70.7, 1.1, 25.8534, 27.2, BUY, 2.0, 'Off-Peak'),
-    Case('essential', 'BLNRSS2', '2026-07-09T17:00:00+10:00', 185.8, 1.1, 38.7093, 38.9, BUY, 2.0, 'Peak'),
+    Case('essential', 'BLNRSS2', '2026-07-09T10:00:00+10:00', 70.7, 1.1, 27.649, 27.2, BUY, 2.0, 'Off-Peak'),
+    Case('essential', 'BLNRSS2', '2026-07-09T17:00:00+10:00', 185.8, 1.1, 40.505, 38.9, BUY, 2.0, 'Peak'),
     Case('essential', 'BLNREX2', '2026-07-09T12:30:00+10:00', 73.0, 1, 6.4723, 5.9, SELL, 2.0, 'Day(09-16)'),
     Case('essential', 'BLNREX2', '2026-07-09T18:30:00+10:00', 160.9, 1, 27.8112, 26.7, SELL, 2.0, 'Evening(16-21)'),
     Case('essential', 'BLNREX2', '2026-07-09T06:00:00+10:00', 115.4, 1, 11.54, 10.7, SELL, 2.0, 'Overnight(21-09)'),
@@ -104,9 +104,9 @@ OBSERVED_CASES = [
     Case('powercor', 'GENR13', '2026-07-09T18:30:00+10:00', 164.7, 1, 16.47, None, SELL, 4.25, 'Evening(16-21)'),
     Case('powercor', 'GENR13', '2026-07-09T06:00:00+10:00', 123.9, 1, 12.39, None, SELL, 4.25, 'Overnight(21-09)'),
     # --- sapn: import RESELE / export RESELEX -- site 76 (market 2.0)
-    Case('sapn', 'RESELE', '2026-07-09T19:00:00+09:30', 143.0, 1.1678, 52.9667, 58.2, BUY, 2.0, 'Peak'),
-    Case('sapn', 'RESELE', '2026-07-09T06:30:00+09:30', 215.0, 1.1678, 36.1744, 39.2, BUY, 2.0, 'Shoulder'),
-    Case('sapn', 'RESELE', '2026-07-09T13:00:00+09:30', 138.0, 1.1678, 19.5738, 21.5, BUY, 2.0, 'Solar Sponge'),
+    Case('sapn', 'RESELE', '2026-07-09T19:00:00+09:30', 143.0, 1.1678, 56.5677, 58.2, BUY, 2.0, 'Peak'),
+    Case('sapn', 'RESELE', '2026-07-09T06:30:00+09:30', 215.0, 1.1678, 37.2424, 39.2, BUY, 2.0, 'Shoulder'),
+    Case('sapn', 'RESELE', '2026-07-09T13:00:00+09:30', 138.0, 1.1678, 19.8948, 21.5, BUY, 2.0, 'Solar Sponge'),
     Case('sapn', 'RESELEX', '2026-07-09T12:30:00+09:30', 135.1, 1, 12.51, 14.1, SELL, 2.0, 'Day(09-16)'),
     # Peak export credit is gated to SA summer, so this winter interval is uncredited.
     Case('sapn', 'RESELEX', '2026-07-09T18:30:00+09:30', 176.1, 1, 17.61, 19.8, SELL, 2.0, 'Evening(16-21)'),
@@ -159,7 +159,8 @@ class TestErgonPeriodsQuirk(unittest.TestCase):
     def test_spot_to_tariff_prices_ertouet1(self):
         t = datetime.fromisoformat('2026-07-09T12:25:00+10:00')
         price = spot_to_tariff(t, 'ergon', 'ERTOUET1', 61.4, dlf=1.1, mlf=1)
-        self.assertAlmostEqual(price, 7.135, places=3)
+        # 7.135 before GST was applied to the network component.
+        self.assertAlmostEqual(price, 7.1627, places=3)
 
     def test_get_periods_raises_for_ertouet1(self):
         with self.assertRaises(ValueError):
@@ -196,13 +197,14 @@ class TestKnownDiscrepancies(unittest.TestCase):
                 f'modelled {prod:.4f}c vs LocalVolts {case.lv}c',
         )
 
-    @unittest.expectedFailure
-    def test_ausgrid_ea025_peak_buy_dlf_too_low(self):
-        # Not a library bug: the EA025 Peak rate is correct, but the caller passes
-        # dlf=1.1 while the site's LV-implied loss factor is ~1.32, so the peak buy
-        # comes out ~54.2c (incl market) vs LV 57.2c.
+    def test_ausgrid_ea025_peak_buy_now_reconciles(self):
+        # Was an expectedFailure blamed on the caller's dlf being too low (~54.2c
+        # incl market vs LV 57.2c). The real cause was GST missing from the network
+        # component: EA025 Peak is 32.516 c/kWh, so the 10% came to ~3.25 c/kWh and
+        # swamped the loss-factor discrepancy it was attributed to. Now inside
+        # tolerance, so it is asserted rather than expected to fail.
         self._assert_matches_localvolts(
-            Case('ausgrid', 'EA025', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 52.2192, 57.2, BUY, 2.0, 'Peak'))
+            Case('ausgrid', 'EA025', '2026-07-09T18:00:00+10:00', 176.4, 1.1, 55.4709, 57.2, BUY, 2.0, 'Peak'))
 
     def test_evoenergy_017_reconciles_after_the_2026_27_rate_fix(self):
         """Not expectedFailure: all three evoenergy 017 windows now land inside
@@ -220,7 +222,7 @@ class TestKnownDiscrepancies(unittest.TestCase):
         # Not a library bug: the 6900 Day network rate is only 0.434c; the ~3c gap
         # (12.39c incl 4.25 market vs LV 9.4c) is the caller-supplied market cost.
         self._assert_matches_localvolts(
-            Case('energex', '6900', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1409, 9.4, BUY, 4.25, 'Day'))
+            Case('energex', '6900', '2026-07-09T13:30:00+10:00', 69.0, 1.1, 8.1843, 9.4, BUY, 4.25, 'Day'))
 
 
 if __name__ == '__main__':

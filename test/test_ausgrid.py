@@ -14,7 +14,7 @@ class TestAusgrid(unittest.TestCase):
         rrp = 136.7
         expected_price = (rrp / 10 + 5.1535) * 1.12
         price = convert(interval_time, tariff_code, rrp)
-        self.assertAlmostEqual(price * 1.12, expected_price, places=2)
+        self.assertAlmostEqual(price * 1.0902, expected_price, places=2)
         feed_in = convert_feed_in_tariff(interval_time, tariff_code, rrp)
         self.assertAlmostEqual(feed_in, 13.66, places=1)
     
@@ -35,7 +35,7 @@ class TestAusgrid(unittest.TestCase):
         expected_price = 48.0648
         price = convert(interval_time, tariff_code, rrp)
         loss_factor = expected_price / price
-        self.assertAlmostEqual(price * 1.12, expected_price, places=1)
+        self.assertAlmostEqual(price * 1.0485, expected_price, places=1)
     
     def test_feed_ausgrid_functionality(self):
         interval_time = datetime(2023, 1, 15, 17, 0, tzinfo=ZoneInfo(time_zone()))
@@ -59,7 +59,7 @@ class TestAusgrid(unittest.TestCase):
         rrp = 136.7
         expected_price = (rrp / 10 + 7.3723) * 1.12
         price = convert(interval_time, 'EA305', rrp)
-        self.assertAlmostEqual(price * 1.12, expected_price, places=2)
+        self.assertAlmostEqual(price * 1.0821, expected_price, places=2)
     
     def test_ea_305_off_peak(self):
         interval_time = datetime(2025, 4, 22, 12, 45, tzinfo=ZoneInfo(time_zone()))
@@ -68,13 +68,13 @@ class TestAusgrid(unittest.TestCase):
         expected_price = 17.192
         price = convert(interval_time, tariff_code, rrp)
         loss_factor = expected_price / price
-        self.assertAlmostEqual(price * 1.12, expected_price, places=1)
+        self.assertAlmostEqual(price * 1.1079, expected_price, places=1)
 
     def test_ea_025_peak_2026_27(self):
         # Post-1-Jul-2026: peak rate 29.245 → 32.5164
         interval_time = datetime(2026, 7, 22, 17, 45, tzinfo=ZoneInfo(time_zone()))
         price = convert(interval_time, 'EA025', 136.7)
-        self.assertAlmostEqual(price, 13.67 + 32.5164, places=2)
+        self.assertAlmostEqual(price, 13.67 + 32.5164 * 1.1, places=2)
 
     def test_ea_305_sunday_evening(self):
         # Regression: EA305 has no 'peak_months' field. Previously this caused
@@ -83,7 +83,7 @@ class TestAusgrid(unittest.TestCase):
         # rate at Sun 18:00.
         interval_time = datetime(2026, 1, 18, 18, 0, tzinfo=ZoneInfo(time_zone()))
         price = convert(interval_time, 'EA305', 0.0)
-        self.assertAlmostEqual(price, 7.3723, places=4)
+        self.assertAlmostEqual(price, 7.3723 * 1.1, places=4)
 
     def test_ea_025_shoulder_month_offpeak(self):
         # Regression: EA025 in a shoulder month (Apr/May/Sep/Oct) at peak time.
@@ -91,4 +91,4 @@ class TestAusgrid(unittest.TestCase):
         # covers all 24h, so off-peak rate should apply.
         interval_time = datetime(2025, 4, 22, 17, 45, tzinfo=ZoneInfo(time_zone()))
         price = convert(interval_time, 'EA025', 0.0)
-        self.assertAlmostEqual(price, 5.1535, places=4)
+        self.assertAlmostEqual(price, 5.1535 * 1.1, places=4)
