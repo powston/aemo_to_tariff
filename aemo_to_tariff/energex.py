@@ -80,6 +80,8 @@ daily_fees_2025_26 = {
     '7200': 7.665,
     '8100': 37.740,
     '8300': 5.273,
+    '94300': 7.544,  # Large TOU Energy (AER 2025-26 consolidated stakeholder report)
+    '94000': 7.544,  # Large Dynamic Flex Storage (AER 2025-26 consolidated stakeholder report)
 }
 
 daily_fees_2026_27 = {
@@ -109,6 +111,8 @@ daily_fees_2026_27 = {
     '7200': 9.134,  # LV Demand Time-of-Use
     '8100': 37.740,  # Demand Large (legacy)
     '8300': 10.317,  # Demand Small
+    '94300': 7.777,  # Large TOU Energy (AER 2026-27 consolidated stakeholder report)
+    '94000': 8.382,  # Large Dynamic Flex Storage (AER 2026-27 consolidated stakeholder report)
     '96200': 0.651,  # Residential Two-Way Tariff Trial
 }
 
@@ -240,13 +244,26 @@ tariffs_2025_26 = {
         'rate': 1.799
     },
     '94300': {
+        # AER Consolidated stakeholder report 2025-26 (v5): peak 0.24736 $/kWh,
+        # off-peak 0.00476, shoulder 0.20136 — stored here in c/kWh.
         'name': 'Large TOU Energy',
         'periods': [
-            ('Off-Peak', time(11, 0), time(13, 59), 0.00476),
-            ('Peak', time(16, 0), time(20, 59), 0.24736),
-            ('Shoulder', time(21, 0), time(23, 59), 0.20136),
-            ('Shoulder', time(0, 0), time(10, 59), 0.20136)
+            ('Off-Peak', time(11, 0), time(14, 0), 0.476),
+            ('Shoulder', time(14, 0), time(16, 0), 20.136),
+            ('Peak', time(16, 0), time(21, 0), 24.736),
+            ('Shoulder', time(21, 0), time(11, 0), 20.136)
         ],
+        'rate': {'Off-Peak': 0.476, 'Peak': 24.736, 'Shoulder': 20.136}
+    },
+    '94000': {
+        # AER Consolidated stakeholder report 2025-26 (v5): anytime volume
+        # 0.01736 $/kWh. This is the price outside dynamic network events —
+        # event pricing is declared by Energex and is not modelled here.
+        'name': 'Large Dynamic Flex Storage',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 1.736)
+        ],
+        'rate': 1.736
     },
 }
 
@@ -381,13 +398,25 @@ tariffs_2026_27 = {
         'rate': 3.365
     },
     '94300': {
+        # AER Consolidated stakeholder report 2026-27 (20 May 2026): peak
+        # 0.25876 $/kWh, off-peak 0.01627, shoulder 0.1954 — stored in c/kWh.
         'name': 'Large TOU Energy',
         'periods': [
-            ('Off-Peak', time(11, 0), time(13, 59), 1.627),
-            ('Peak', time(16, 0), time(20, 59), 25.876),
-            ('Shoulder', time(21, 0), time(23, 59), 19.540),
-            ('Shoulder', time(0, 0), time(10, 59), 19.540)
+            ('Off-Peak', time(11, 0), time(14, 0), 1.627),
+            ('Shoulder', time(14, 0), time(16, 0), 19.540),
+            ('Peak', time(16, 0), time(21, 0), 25.876),
+            ('Shoulder', time(21, 0), time(11, 0), 19.540)
         ],
+        'rate': {'Off-Peak': 1.627, 'Peak': 25.876, 'Shoulder': 19.540}
+    },
+    '94000': {
+        # AER Consolidated stakeholder report 2026-27 (20 May 2026): anytime
+        # volume 0.01876 $/kWh outside dynamic network events.
+        'name': 'Large Dynamic Flex Storage',
+        'periods': [
+            ('Anytime', time(0, 0), time(23, 59), 1.876)
+        ],
+        'rate': 1.876
     },
     '96200': {
         'name': 'Residential Two-Way Tariff Trial',
@@ -431,6 +460,8 @@ demand_charges_2025_26 = {
     },
     '8100': 15.773,
     '8300': 15.704,
+    '94300': None,  # Large TOU Energy (energy-only)
+    '94000': None,  # Large Dynamic Flex Storage (energy-only outside events)
 }
 
 demand_charges_2026_27 = {
@@ -449,6 +480,8 @@ demand_charges_2026_27 = {
     },
     '8100': 15.773,  # Demand Large (legacy)
     '8300': 13.913,  # Demand Small
+    '94300': None,  # Large TOU Energy (energy-only)
+    '94000': None,  # Large Dynamic Flex Storage (energy-only outside events)
 }
 
 
@@ -718,8 +751,10 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
     rrp_c_kwh = rrp / 10
 
-    tariff_code = str(tariff_code)[:4]
-    tariff = get_tariffs(interval_datetime).get(tariff_code)
+    # Look up the full code first so 5-digit codes (e.g. 94300) resolve; only
+    # then fall back to the first four digits for suffixed codes like 6900X.
+    tariffs = get_tariffs(interval_datetime)
+    tariff = tariffs.get(str(tariff_code)) or tariffs.get(str(tariff_code)[:4])
 
     if not tariff:
         # Handle unknown tariff codes
