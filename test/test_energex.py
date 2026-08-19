@@ -113,31 +113,34 @@ class TestLargeTouEnergy(unittest.TestCase):
 
 
 class TestLargeDynamicFlexStorage(unittest.TestCase):
-    # NTC 94000 (SAC Large Dynamic Flex Storage) — anytime volume rate from
-    # the AER consolidated stakeholder reports: 2025-26 1.736 c/kWh and
-    # $7.544/day; 2026-27 1.876 c/kWh and $8.382/day. Only the outside-event
-    # price is modelled; dynamic event pricing is declared by Energex.
+    # NTC 94000 (SAC Large Dynamic Flex Storage) — per the Energex TSS
+    # 2025-30 Table 9 and the AER consolidated stakeholder reports, the only
+    # volume charge is Peak 17:00-20:00 (1.736 c/kWh 2025-26, 1.876 c/kWh
+    # 2026-27); off-peak (11:00-13:00) and shoulder are zero. Daily fees are
+    # $7.544/day (2025-26) and $8.382/day (2026-27).
 
     def test_translate_tariff_94000(self):
         # 5-digit code must not be truncated
         self.assertEqual(energex.translate_tariff('94000'), '94000')
 
-    def test_convert_2025_26(self):
+    def test_convert_peak_2025_26(self):
+        # 18:05 → adjusted to 18:00 → Peak 1.736
         dt = datetime(2025, 8, 15, 18, 5, tzinfo=BRISBANE)
         price = energex.convert(dt, '94000', 100.0)
         self.assertAlmostEqual(price, 10.0 + 1.736 * 1.1, places=3)
 
-    def test_convert_2026_27(self):
+    def test_convert_peak_2026_27(self):
         dt = datetime(2026, 8, 15, 18, 5, tzinfo=BRISBANE)
         price = energex.convert(dt, '94000', 100.0)
         self.assertAlmostEqual(price, 10.0 + 1.876 * 1.1, places=3)
 
-    def test_convert_anytime_rate_all_day(self):
-        # Flat tariff: same network component at any hour
-        for hour in (0, 6, 12, 17, 23):
-            dt = datetime(2025, 8, 15, hour, 30, tzinfo=BRISBANE)
-            price = energex.convert(dt, '94000', 100.0)
-            self.assertAlmostEqual(price, 10.0 + 1.736 * 1.1, places=3)
+    def test_convert_zero_network_outside_peak(self):
+        # Off-peak and shoulder carry no volume charge: spot only
+        for year in (2025, 2026):
+            for hour in (0, 6, 12, 15, 22):
+                dt = datetime(year, 8, 15, hour, 30, tzinfo=BRISBANE)
+                price = energex.convert(dt, '94000', 100.0)
+                self.assertAlmostEqual(price, 10.0, places=3, msg=f"{year} {hour}:30")
 
     def test_daily_fee_94000_2025_26(self):
         # Fee table is $/day; get_daily_fee returns cents/day.
@@ -151,7 +154,7 @@ class TestLargeDynamicFlexStorage(unittest.TestCase):
     def test_get_periods_94000(self):
         interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)
         names = {p[0] for p in energex.get_periods('94000', interval_time=interval_time)}
-        self.assertEqual(names, {'Anytime'})
+        self.assertEqual(names, {'Peak', 'Off-Peak', 'Shoulder'})
 
     def test_estimate_demand_fee_94000(self):
         # Energy-only tariff: must not fall back to the 3700 demand charge.

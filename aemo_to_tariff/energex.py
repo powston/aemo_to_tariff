@@ -256,14 +256,18 @@ tariffs_2025_26 = {
         'rate': {'Off-Peak': 0.476, 'Peak': 24.736, 'Shoulder': 20.136}
     },
     '94000': {
-        # AER Consolidated stakeholder report 2025-26 (v5): anytime volume
-        # 0.01736 $/kWh. This is the price outside dynamic network events —
-        # event pricing is declared by Energex and is not modelled here.
+        # AER Consolidated stakeholder report 2025-26 (v5): the only volume
+        # charge is Peak 0.01736 $/kWh; off-peak and shoulder are zero.
+        # Windows per the Energex TSS 2025-30 Table 9 (Dynamic Flex Storage
+        # has fixed ToU windows and no critical peak prices).
         'name': 'Large Dynamic Flex Storage',
         'periods': [
-            ('Anytime', time(0, 0), time(23, 59), 1.736)
+            ('Off-Peak', time(11, 0), time(13, 0), 0.0),
+            ('Shoulder', time(13, 0), time(17, 0), 0.0),
+            ('Peak', time(17, 0), time(20, 0), 1.736),
+            ('Shoulder', time(20, 0), time(11, 0), 0.0)
         ],
-        'rate': 1.736
+        'rate': {'Off-Peak': 0.0, 'Peak': 1.736, 'Shoulder': 0.0}
     },
 }
 
@@ -410,13 +414,17 @@ tariffs_2026_27 = {
         'rate': {'Off-Peak': 1.627, 'Peak': 25.876, 'Shoulder': 19.540}
     },
     '94000': {
-        # AER Consolidated stakeholder report 2026-27 (20 May 2026): anytime
-        # volume 0.01876 $/kWh outside dynamic network events.
+        # AER Consolidated stakeholder report 2026-27 (20 May 2026): the only
+        # volume charge is Peak 0.01876 $/kWh; off-peak and shoulder are zero.
+        # Windows per the Energex TSS 2025-30 Table 9.
         'name': 'Large Dynamic Flex Storage',
         'periods': [
-            ('Anytime', time(0, 0), time(23, 59), 1.876)
+            ('Off-Peak', time(11, 0), time(13, 0), 0.0),
+            ('Shoulder', time(13, 0), time(17, 0), 0.0),
+            ('Peak', time(17, 0), time(20, 0), 1.876),
+            ('Shoulder', time(20, 0), time(11, 0), 0.0)
         ],
-        'rate': 1.876
+        'rate': {'Off-Peak': 0.0, 'Peak': 1.876, 'Shoulder': 0.0}
     },
     '96200': {
         'name': 'Residential Two-Way Tariff Trial',
