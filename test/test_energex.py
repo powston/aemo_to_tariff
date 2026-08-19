@@ -34,6 +34,134 @@ class TestEnergex(unittest.TestCase):
         self.assertAlmostEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 65.1, 3)
 
 
+class TestLargeTouEnergy(unittest.TestCase):
+    # NTC 94300 (SAC Large TOU Energy) — rates from the AER consolidated
+    # stakeholder reports: 2025-26 peak 24.736 / off-peak 0.476 / shoulder
+    # 20.136 c/kWh, $7.544/day; 2026-27 peak 25.876 / off-peak 1.627 /
+    # shoulder 19.540 c/kWh, $7.777/day.
+
+    def test_translate_tariff_94300(self):
+        # 5-digit code must not be truncated
+        self.assertEqual(energex.translate_tariff('94300'), '94300')
+
+    def test_convert_peak_2025_26(self):
+        # 18:05 → adjusted to 18:00 → Peak 24.736
+        dt = datetime(2025, 8, 15, 18, 5, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94300', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 24.736 * 1.1, places=3)
+
+    def test_convert_offpeak_2025_26(self):
+        # 12:00 → Off-Peak 0.476 (was mistranscribed as 0.00476 in $/kWh)
+        dt = datetime(2025, 8, 15, 12, 0, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94300', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 0.476 * 1.1, places=3)
+
+    def test_convert_shoulder_afternoon_gap_2025_26(self):
+        # 15:00 sits in the 14:00-16:00 window that used to be an uncovered gap
+        dt = datetime(2025, 8, 15, 15, 0, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94300', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 20.136 * 1.1, places=3)
+
+    def test_convert_shoulder_overnight_2025_26(self):
+        dt = datetime(2025, 8, 15, 22, 0, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94300', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 20.136 * 1.1, places=3)
+
+    def test_convert_peak_2026_27(self):
+        dt = datetime(2026, 8, 15, 18, 5, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94300', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 25.876 * 1.1, places=3)
+
+    def test_convert_shoulder_afternoon_gap_2026_27(self):
+        dt = datetime(2026, 8, 15, 15, 0, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94300', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 19.540 * 1.1, places=3)
+
+    def test_periods_cover_full_day(self):
+        # Every minute of the day must match a period in both price years
+        # (the old entries left 14:00-16:00 uncovered).
+        from datetime import time as t
+        for year in (2025, 2026):
+            when = datetime(year, 8, 15, 12, 0, tzinfo=BRISBANE)
+            periods = energex.get_periods('94300', interval_time=when)
+            for minutes in range(0, 24 * 60):
+                now = t(minutes // 60, minutes % 60)
+                matched = any(
+                    start <= now < end or (start > end and (now >= start or now < end))
+                    for _, start, end, _ in periods
+                )
+                self.assertTrue(matched, f"no period covers {now} in {year}")
+
+    def test_daily_fee_94300_2025_26(self):
+        # Fee table is $/day; get_daily_fee returns cents/day.
+        interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)
+        self.assertAlmostEqual(energex.get_daily_fee('94300', interval_time=interval_time), 754.4, 3)
+
+    def test_daily_fee_94300_2026_27(self):
+        interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
+        self.assertAlmostEqual(energex.get_daily_fee('94300', interval_time=interval_time), 777.7, 3)
+
+    def test_get_periods_94300(self):
+        interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)
+        names = {p[0] for p in energex.get_periods('94300', interval_time=interval_time)}
+        self.assertEqual(names, {'Peak', 'Off-Peak', 'Shoulder'})
+
+    def test_estimate_demand_fee_94300(self):
+        # Energy-only tariff: must not fall back to the 3700 demand charge.
+        interval_time = datetime(2025, 9, 1, 18, 0, tzinfo=BRISBANE)
+        self.assertEqual(energex.estimate_demand_fee(interval_time, '94300', 5.0), 0.0)
+
+
+class TestLargeDynamicFlexStorage(unittest.TestCase):
+    # NTC 94000 (SAC Large Dynamic Flex Storage) — per the Energex TSS
+    # 2025-30 Table 9 and the AER consolidated stakeholder reports, the only
+    # volume charge is Peak 17:00-20:00 (1.736 c/kWh 2025-26, 1.876 c/kWh
+    # 2026-27); off-peak (11:00-13:00) and shoulder are zero. Daily fees are
+    # $7.544/day (2025-26) and $8.382/day (2026-27).
+
+    def test_translate_tariff_94000(self):
+        # 5-digit code must not be truncated
+        self.assertEqual(energex.translate_tariff('94000'), '94000')
+
+    def test_convert_peak_2025_26(self):
+        # 18:05 → adjusted to 18:00 → Peak 1.736
+        dt = datetime(2025, 8, 15, 18, 5, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94000', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 1.736 * 1.1, places=3)
+
+    def test_convert_peak_2026_27(self):
+        dt = datetime(2026, 8, 15, 18, 5, tzinfo=BRISBANE)
+        price = energex.convert(dt, '94000', 100.0)
+        self.assertAlmostEqual(price, 10.0 + 1.876 * 1.1, places=3)
+
+    def test_convert_zero_network_outside_peak(self):
+        # Off-peak and shoulder carry no volume charge: spot only
+        for year in (2025, 2026):
+            for hour in (0, 6, 12, 15, 22):
+                dt = datetime(year, 8, 15, hour, 30, tzinfo=BRISBANE)
+                price = energex.convert(dt, '94000', 100.0)
+                self.assertAlmostEqual(price, 10.0, places=3, msg=f"{year} {hour}:30")
+
+    def test_daily_fee_94000_2025_26(self):
+        # Fee table is $/day; get_daily_fee returns cents/day.
+        interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)
+        self.assertAlmostEqual(energex.get_daily_fee('94000', interval_time=interval_time), 754.4, 3)
+
+    def test_daily_fee_94000_2026_27(self):
+        interval_time = datetime(2026, 9, 1, 12, 0, tzinfo=BRISBANE)
+        self.assertAlmostEqual(energex.get_daily_fee('94000', interval_time=interval_time), 838.2, 3)
+
+    def test_get_periods_94000(self):
+        interval_time = datetime(2025, 9, 1, 12, 0, tzinfo=BRISBANE)
+        names = {p[0] for p in energex.get_periods('94000', interval_time=interval_time)}
+        self.assertEqual(names, {'Peak', 'Off-Peak', 'Shoulder'})
+
+    def test_estimate_demand_fee_94000(self):
+        # Energy-only tariff: must not fall back to the 3700 demand charge.
+        interval_time = datetime(2025, 9, 1, 18, 0, tzinfo=BRISBANE)
+        self.assertEqual(energex.estimate_demand_fee(interval_time, '94000', 5.0), 0.0)
+
+
 class TestTwoWayTariff(unittest.TestCase):
 
     def test_import_peak_summer(self):
