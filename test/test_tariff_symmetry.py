@@ -5,7 +5,7 @@ import unittest
 import aemo_to_tariff
 
 # Networks that define a feed_in_tariffs_* dict alongside tariffs_*.
-NETWORKS = ['endeavour', 'essential', 'evoenergy', 'sapower']
+NETWORKS = ['endeavour', 'essential', 'evoenergy', 'powercor', 'sapower']
 
 CUSTOMER_TYPES = ['Residential', 'Business', 'Battery']
 
@@ -38,6 +38,7 @@ EXPORT_ONLY = {
     'essential': {'BLNREX2', 'BLNBEX1'},
     'sapower': {'RESELEX', 'SBELEX'},
     'evoenergy': set(),
+    'powercor': set(),   # PRCER prices on both sides under one code
 }
 
 

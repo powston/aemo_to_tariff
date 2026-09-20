@@ -123,8 +123,76 @@ tariffs_2026_27 = {
         'periods': [
             ('Anytime', time(0, 0), time(23, 59), 6.820)
         ]
-    }
+    },
+    # Residential CER (two-way tariff), opt-in. Powercor 2026-27 Tariff
+    # Summary (7 May 2026), PAL_2026-27_NUOS row 'Residential CER', GST
+    # exclusive: peak import 27.86 c/kWh Dec-Feb and Jun-Aug, 20.80 c/kWh
+    # Mar-May and Sep-Nov, both 16:00-21:00; saver 1.00 c/kWh 11:00-16:00;
+    # off-peak 4.20 c/kWh at all other times. The export side (peak export
+    # credit 7 c/kWh, saver export charge 1 c/kWh) is in feed_in_tariffs_2026_27.
+    'PRCER': {
+        'name': 'Residential CER',
+        'seasonal': True,
+        'periods_peak_season': [
+            ('Off-peak', time(0, 0), time(11, 0), 4.20),
+            ('Saver', time(11, 0), time(16, 0), 1.00),
+            ('Peak', time(16, 0), time(21, 0), 27.86),
+            ('Off-peak', time(21, 0), time(23, 59), 4.20),
+        ],
+        'periods_shoulder_season': [
+            ('Off-peak', time(0, 0), time(11, 0), 4.20),
+            ('Saver', time(11, 0), time(16, 0), 1.00),
+            ('Peak', time(16, 0), time(21, 0), 20.80),
+            ('Off-peak', time(21, 0), time(23, 59), 4.20),
+        ],
+    },
 }
+
+# PRCER's peak import rate and peak export credit apply in the summer and
+# winter months; the saver export charge applies September to May.
+PRCER_PEAK_SEASON_MONTHS = (12, 1, 2, 6, 7, 8)
+PRCER_SAVER_EXPORT_MONTHS = (9, 10, 11, 12, 1, 2, 3, 4, 5)
+
+
+def _is_prcer_peak_season(interval_time: datetime) -> bool:
+    local = interval_time.astimezone(ZoneInfo(time_zone()))
+    return local.month in PRCER_PEAK_SEASON_MONTHS
+
+
+# Feed-in (export) tariffs. Rows are (name, start, end, months, rate) with the
+# rate in c/kWh added to the spot price the customer is paid: a credit is
+# positive, a charge negative. Powercor's 1 kWh/day free export allowance on
+# the saver export charge is a daily quantity and cannot be applied per
+# interval, so the charge is applied to every interval in the window.
+feed_in_tariffs_2025_26 = {}
+
+feed_in_tariffs_2026_27 = {
+    'PRCER': {
+        'name': 'Residential CER Export',
+        'periods': [
+            ('Peak export credit', time(16, 0), time(21, 0), PRCER_PEAK_SEASON_MONTHS, 7.00),
+            ('Saver export charge', time(11, 0), time(16, 0), PRCER_SAVER_EXPORT_MONTHS, -1.00),
+        ],
+    },
+}
+
+
+def battery_tariffs(customer_type: str):
+    """
+    Get the two-way (import + export) tariff pairing for a customer type.
+
+    Parameters:
+    - customer_type (str): The customer type ('Residential' or 'Business').
+
+    Returns:
+    - dict: A dictionary with 'import' and 'export' tariff codes.
+    """
+    if customer_type == 'Residential':
+        return {'import': ['PRCER'], 'export': ['PRCER']}
+    elif customer_type == 'Business':
+        return {'import': [], 'export': []}
+    else:
+        raise ValueError("Invalid customer type. Must be 'Residential' or 'Business'.")
 
 
 demand_charges_2025_26 = {
@@ -192,19 +260,40 @@ def get_daily_fee(tariff_code: str, interval_time=None):
         return get_daily_fees(interval_time).get(tariff_code, 41.10)
     return 41.10  # 2025–26 placeholder behaviour preserved
 
+def get_feed_in_tariffs(interval_time=None):
+    return feed_in_tariffs_2026_27 if _use_2026_prices(interval_time) else feed_in_tariffs_2025_26
+
+
 def get_periods(tariff_code: str, interval_time=None):
     tariff = get_tariffs(interval_time).get(tariff_code)
     if not tariff:
         raise ValueError(f"Unknown tariff code: {tariff_code}")
 
+    if tariff.get('seasonal'):
+        when = interval_time if interval_time is not None else datetime.now(ZoneInfo(time_zone()))
+        season = 'periods_peak_season' if _is_prcer_peak_season(when) else 'periods_shoulder_season'
+        return tariff[season]
+
     return tariff['periods']
 
 def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
     """
-    Convert RRP from $/MWh to c/kWh.
+    Convert RRP from $/MWh to the feed-in price in c/kWh.
+
+    Export credits and charges are added to the spot price for the tariffs in
+    feed_in_tariffs_*; every other code is a straight rrp/10 pass-through.
     """
     rrp_c_kwh = rrp / 10
+    tariff = get_feed_in_tariffs(interval_datetime).get(tariff_code)
+    if not tariff:
+        return rrp_c_kwh
 
+    adjusted = interval_datetime - timedelta(minutes=5)
+    local = adjusted.astimezone(ZoneInfo(time_zone()))
+    local_time = local.time()
+    for _name, start, end, months, rate in tariff['periods']:
+        if local.month in months and start <= local_time < end:
+            return rrp_c_kwh + rate
     return rrp_c_kwh
 
 def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
@@ -223,10 +312,11 @@ def convert(interval_datetime: datetime, tariff_code: str, rrp: float):
     interval_time = interval_datetime.astimezone(ZoneInfo(time_zone())).time()
 
     rrp_c_kwh = rrp / 10
-    tariff = get_tariffs(interval_datetime)[tariff_code]
+    if tariff_code not in get_tariffs(interval_datetime):
+        raise KeyError(tariff_code)
 
-    # Find the applicable period and rate
-    for period, start, end, rate in tariff['periods']:
+    # Find the applicable period and rate (season-specific for PRCER)
+    for period, start, end, rate in get_periods(tariff_code, interval_datetime):
         if start <= interval_time < end:
             total_price = rrp_c_kwh + rate
             return total_price

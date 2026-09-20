@@ -317,5 +317,7 @@ def battery_tariffs(network, customer_type: str):
         return endeavour.battery_tariffs(customer_type)
     elif network == 'essential':
         return essential.battery_tariffs(customer_type)
+    elif network == 'powercor':
+        return powercor.battery_tariffs(customer_type)
     else:
         return energex.battery_tariffs(customer_type)
