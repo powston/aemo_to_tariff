@@ -34,6 +34,37 @@ class TestEnergex(unittest.TestCase):
         self.assertAlmostEqual(energex.get_daily_fee('6900', 20000, interval_time=interval_time), 65.1, 3)
 
 
+
+class TestLvDemandTou7200(unittest.TestCase):
+    # NTC 7200 demand is billed per kVA. Expected dollars are demand line items
+    # from invoices for Powston site 1571: Jan 2026 (2025-26 prices) and Aug 2026
+    # (2026-27 prices).
+    JAN_2026 = datetime(2026, 1, 15, 17, 30, tzinfo=BRISBANE)
+    AUG_2026 = datetime(2026, 8, 6, 17, 30, tzinfo=BRISBANE)
+
+    def test_peak_demand_2025_26_matches_invoice(self):
+        fee = energex.calculate_demand_fee('7200', 49.69, tou='Peak', interval_time=self.JAN_2026)
+        self.assertAlmostEqual(fee, 667.19, places=2)
+
+    def test_shoulder_demand_2025_26_matches_invoice(self):
+        fee = energex.calculate_demand_fee('7200', 53.94, tou='Shoulder', interval_time=self.JAN_2026)
+        self.assertAlmostEqual(fee, 161.82, places=2)
+
+    def test_peak_demand_2026_27_matches_invoice(self):
+        fee = energex.calculate_demand_fee('7200', 27.02, tou='Peak', interval_time=self.AUG_2026)
+        self.assertAlmostEqual(fee, 375.93, places=2)
+
+    def test_shoulder_demand_2026_27_matches_invoice(self):
+        fee = energex.calculate_demand_fee('7200', 27.47, tou='Shoulder', interval_time=self.AUG_2026)
+        self.assertAlmostEqual(fee, 100.87, places=2)
+
+    def test_estimate_uses_peak_rate_in_evening_window(self):
+        self.assertAlmostEqual(energex.estimate_demand_fee(self.AUG_2026, '7200', 1.0), 13.913, places=3)
+
+    def test_daily_fee_2026_27_matches_invoice(self):
+        # DUOS 7.412 + TUOS 1.682 + jurisdictional 0.04 $/day, returned in c/day
+        self.assertAlmostEqual(energex.get_daily_fee('7200', interval_time=self.AUG_2026), 913.4, places=1)
+
 class TestLargeTouEnergy(unittest.TestCase):
     # NTC 94300 (SAC Large TOU Energy) — rates from the AER consolidated
     # stakeholder reports: 2025-26 peak 24.736 / off-peak 0.476 / shoulder
