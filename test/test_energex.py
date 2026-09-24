@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import aemo_to_tariff.energex as energex
+from aemo_to_tariff import calculate_demand_fee
 
 BRISBANE = ZoneInfo('Australia/Brisbane')
 
@@ -57,6 +58,22 @@ class TestLvDemandTou7200(unittest.TestCase):
     def test_shoulder_demand_2026_27_matches_invoice(self):
         fee = energex.calculate_demand_fee('7200', 27.47, tou='Shoulder', interval_time=self.AUG_2026)
         self.assertAlmostEqual(fee, 100.87, places=2)
+
+    def test_top_level_default_charges_peak(self):
+        # convert.calculate_demand_fee passes no tou; it must default to the Peak
+        # charge rather than silently returning 0 (27.02 kVA -> $375.93 invoiced).
+        fee = calculate_demand_fee('energex', '7200', 27.02, interval_time=self.AUG_2026)
+        self.assertAlmostEqual(fee, 375.93, places=2)
+
+    def test_tou_lookup_is_case_insensitive(self):
+        for tou in ('shoulder', 'Shoulder', 'SHOULDER'):
+            fee = energex.calculate_demand_fee('7200', 27.47, tou=tou, interval_time=self.AUG_2026)
+            self.assertAlmostEqual(fee, 100.87, places=2)
+        self.assertEqual(energex.calculate_demand_fee('7200', 27.47, tou='off-peak', interval_time=self.AUG_2026), 0.0)
+
+    def test_residential_demand_3700_default_peak(self):
+        fee = calculate_demand_fee('energex', '3700', 1.0, interval_time=self.AUG_2026)
+        self.assertAlmostEqual(fee, 8.998, places=3)
 
     def test_estimate_uses_peak_rate_in_evening_window(self):
         self.assertAlmostEqual(energex.estimate_demand_fee(self.AUG_2026, '7200', 1.0), 13.913, places=3)

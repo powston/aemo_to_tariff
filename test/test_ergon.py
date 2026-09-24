@@ -60,6 +60,11 @@ class TestErgonFunctions(unittest.TestCase):
         interval_datetime = datetime(2025, 4, 5, 11, 30, tzinfo=BRISBANE)
         self.assertAlmostEqual(convert(interval_datetime, 'ERTDEMXT1', rrp=-31.99), -2.6226, places=2)
 
+    def test_calculate_demand_fee_defaults_to_peak(self):
+        # Tables key 'Peak'; the default tou used to be 'peak' and returned 0.
+        self.assertAlmostEqual(calculate_demand_fee('ERTDEMXT1', 5.0, interval_time=AFTER_TRANSITION), 35.0, places=2)
+        self.assertAlmostEqual(calculate_demand_fee('ERTDEMXT1', 5.0, tou='peak', interval_time=AFTER_TRANSITION), 35.0, places=2)
+
     def test_ERTDEMXT1_demand_fee(self):
         # $7/kW demand applies in both schedules (residential demand unchanged)
         interval_datetime = datetime(2025, 4, 5, 18, 30, tzinfo=BRISBANE)

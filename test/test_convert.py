@@ -1,5 +1,6 @@
 # test/test_convert.py
 import unittest
+from zoneinfo import ZoneInfo
 from datetime import datetime
 from aemo_to_tariff import (spot_to_tariff, get_daily_fee, calculate_demand_fee,
                             spot_to_feed_in_tariff, estimate_demand_fee, battery_tariffs)
@@ -125,8 +126,14 @@ class TestTariffConversions(unittest.TestCase):
         self.assertAlmostEqual(get_daily_fee('Energex', '6000', annual_usage=30000, interval_time=after), 103.3, 3)
 
     def test_energex_demand_fee(self):
-        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31), 0.0, 2)
-        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31), 0.0, 2)
+        # Peak $/kW/month x 5.5 kW. These returned 0.0 while the default tou='peak'
+        # missed the tables' 'Peak' key.
+        tz = ZoneInfo('Australia/Brisbane')
+        fy26, fy27 = datetime(2026, 3, 1, tzinfo=tz), datetime(2026, 8, 1, tzinfo=tz)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31, interval_time=fy26), 49.489, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31, interval_time=fy26), 28.1985, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31, interval_time=fy27), 49.489, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31, interval_time=fy27), 38.5, 2)
 
     def test_ausgrid_daily_fee(self):
         # Placeholder test - update when Ausgrid is implemented

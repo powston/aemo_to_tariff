@@ -341,7 +341,13 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
 
     return charge_per_kw_per_month * demand_kw
 
-def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='peak', interval_time=None):
+def _tou_charge(charge: dict, tou: str) -> float:
+    """Look up a time-of-use demand charge case-insensitively ('peak' == 'Peak')."""
+    wanted = (tou or 'Peak').lower()
+    return next((v for k, v in charge.items() if k.lower() == wanted), 0.0)
+
+
+def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou='Peak', interval_time=None):
     """
     Calculate the demand fee for a given tariff code, demand amount, and time period.
 
@@ -362,7 +368,7 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
 
     charge = charges[tariff_code]
     if isinstance(charge, dict):
-        charge_per_kw_per_month = charge.get(tou, 0.0)
+        charge_per_kw_per_month = _tou_charge(charge, tou)
     else:
         charge_per_kw_per_month = charge
 
