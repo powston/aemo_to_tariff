@@ -126,14 +126,14 @@ class TestTariffConversions(unittest.TestCase):
         self.assertAlmostEqual(get_daily_fee('Energex', '6000', annual_usage=30000, interval_time=after), 103.3, 3)
 
     def test_energex_demand_fee(self):
-        # Peak $/kW/month x 5.5 kW. These returned 0.0 while the default tou='peak'
-        # missed the tables' 'Peak' key.
+        # Peak $/kW/month x 5.5 kW x 31/30 days. These returned 0.0 while the
+        # default tou='peak' missed the tables' 'Peak' key.
         tz = ZoneInfo('Australia/Brisbane')
         fy26, fy27 = datetime(2026, 3, 1, tzinfo=tz), datetime(2026, 8, 1, tzinfo=tz)
-        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31, interval_time=fy26), 49.489, 2)
-        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31, interval_time=fy26), 28.1985, 2)
-        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31, interval_time=fy27), 49.489, 2)
-        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31, interval_time=fy27), 38.5, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31, interval_time=fy26), 51.1386, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31, interval_time=fy26), 29.13845, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3700', 5.5, 31, interval_time=fy27), 51.1386, 2)
+        self.assertAlmostEqual(calculate_demand_fee('Energex', '3900', 5.5, 31, interval_time=fy27), 39.78333, 2)
 
     def test_ausgrid_daily_fee(self):
         # Placeholder test - update when Ausgrid is implemented

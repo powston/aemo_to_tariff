@@ -609,8 +609,8 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
     else:
         charge_per_kw_per_month = charge
 
-    # Convert the charge to a daily rate and then calculate for the given number of days
-    daily_rate = charge_per_kw_per_month / days
+    # Monthly charge -> daily rate over a 30-day month, prorated to the billing period
+    daily_rate = charge_per_kw_per_month / 30
     total_charge = demand_kw * daily_rate * days
 
     return total_charge

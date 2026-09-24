@@ -71,6 +71,13 @@ class TestLvDemandTou7200(unittest.TestCase):
             self.assertAlmostEqual(fee, 100.87, places=2)
         self.assertEqual(energex.calculate_demand_fee('7200', 27.47, tou='off-peak', interval_time=self.AUG_2026), 0.0)
 
+    def test_demand_fee_prorates_billing_period(self):
+        # $/kVA/month over a 30-day month: a 1-day period is 1/30th, a 91-day quarter ~3x
+        one_day = energex.calculate_demand_fee('7200', 27.02, days=1, interval_time=self.AUG_2026)
+        quarter = energex.calculate_demand_fee('7200', 27.02, days=91, interval_time=self.AUG_2026)
+        self.assertAlmostEqual(one_day, 27.02 * 13.913 / 30, places=4)
+        self.assertAlmostEqual(quarter, 27.02 * 13.913 * 91 / 30, places=4)
+
     def test_residential_demand_3700_default_peak(self):
         fee = calculate_demand_fee('energex', '3700', 1.0, interval_time=self.AUG_2026)
         self.assertAlmostEqual(fee, 8.998, places=3)
