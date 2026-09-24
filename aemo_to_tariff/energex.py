@@ -461,10 +461,12 @@ demand_charges_2025_26 = {
     '6900': None,
     '8900': None,
     '8800': None,
+    # 7200 demand is billed per kVA. These are the invoiced $/kVA/month rates
+    # (Origin, Jan-Apr 2026); the table previously carried them divided by 0.9.
     '7200': {
         'Off-Peak': 0.000,
-        'Peak': 14.919,
-        'Shoulder': 3.333
+        'Peak': 13.427,
+        'Shoulder': 3.000
     },
     '8100': 15.773,
     '8300': 15.704,
@@ -483,8 +485,9 @@ demand_charges_2026_27 = {
     '8800': None,  # Small 8800 TOU
     '7200': {
         'Off-Peak': 0.000,    # 11:00 to 13:00
-        'Peak': 15.459,       # 17:00 to 20:00
-        'Shoulder': 4.080     # Other times
+        # $/kVA/month as invoiced (Origin, Aug 2026); previously 15.459 / 4.080 = these / 0.9
+        'Peak': 13.913,       # 17:00 to 20:00 weekdays
+        'Shoulder': 3.672     # Other times
     },
     '8100': 15.773,  # Demand Large (legacy)
     '8300': 13.913,  # Demand Small
@@ -546,7 +549,7 @@ def estimate_demand_fee(interval_time: datetime, tariff_code: str, demand_kw: fl
     Parameters:
     - interval_time (datetime): The interval datetime.
     - tariff_code (str): The tariff code.
-    - demand_kw (float): The maximum demand in kW (or kVA for 8100 and 8300 tariffs).
+    - demand_kw (float): The maximum demand in kW (or kVA for 7200, 8100 and 8300 tariffs).
 
     Returns:
     - float: The estimated demand fee in dollars.
@@ -579,7 +582,7 @@ def calculate_demand_fee(tariff_code: str, demand_kw: float, days: int = 30, tou
 
     Parameters:
     - tariff_code (str): The tariff code.
-    - demand_kw (float): The maximum demand in kW (or kVA for 8100 and 8300 tariffs).
+    - demand_kw (float): The maximum demand in kW (or kVA for 7200, 8100 and 8300 tariffs).
     - days (int): The number of days for the billing period (default is 30).
     - interval_time (datetime, optional): Selects the price schedule. Defaults to now.
 
