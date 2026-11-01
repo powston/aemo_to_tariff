@@ -662,19 +662,27 @@ def get_periods(tariff_code: str, interval_time=None):
 
     return tariff['periods']
 
-def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float):
+TWO_WAY_TARIFFS = ('96200', '96200X')
+
+
+def convert_feed_in_tariff(interval_datetime: datetime, tariff_code: str, rrp: float,
+                           import_tariff: str = None):
     """
     Convert RRP from $/MWh to c/kWh for Energex feed-in (export).
 
     Parameters:
     - interval_datetime (datetime): The interval datetime.
-    - tariff_code (str): The tariff code.
+    - tariff_code (str): The export tariff code.
     - rrp (float): The Regional Reference Price in $/MWh.
+    - import_tariff (str, optional): The site's import tariff code. NTC 96200 is
+      a single two-way network tariff, but the NMI's export (B1) register still
+      reports its own code (e.g. '9800'), so the export reward/charge follows
+      the import tariff when it is 96200.
 
     Returns:
     - float: The price in c/kWh.
     """
-    if str(tariff_code) in ('96200', '96200X'):
+    if str(tariff_code) in TWO_WAY_TARIFFS or str(import_tariff) in TWO_WAY_TARIFFS:
         # Two-Way Tariff Trial export — seasonal reward/charge applies.
         adjusted = interval_datetime - timedelta(minutes=5)
         return convert_two_way_tariff(adjusted, rrp, is_export=True)

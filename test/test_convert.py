@@ -166,6 +166,14 @@ class TestTariffConversions(unittest.TestCase):
         interval_time = datetime.strptime('2024-07-05 19:00+10:00', '%Y-%m-%d %H:%M%z')
         self.assertAlmostEqual(spot_to_feed_in_tariff(interval_time, 'Evoenergy', '026', 200), 34.2, 2)
 
+    def test_spot_to_feed_in_tariff_energex_two_way_import(self):
+        summer = datetime(2026, 11, 1, 18, 5, tzinfo=ZoneInfo('Australia/Brisbane'))
+        self.assertAlmostEqual(
+            spot_to_feed_in_tariff(summer, 'energex', '9800', 100, dlf=1, mlf=1, market=1, import_tariff='96200'),
+            10.0 + 12.195, 2)
+        self.assertAlmostEqual(
+            spot_to_feed_in_tariff(summer, 'energex', '9800', 100, dlf=1, mlf=1, market=1), 10.0, 2)
+
     def test_sapn_demand_fee(self):
         self.assertAlmostEqual(calculate_demand_fee('SAPN', 'RTOU', 5.5, 31), 0, 4)
         self.assertAlmostEqual(calculate_demand_fee('SAPN', 'SBTOU', 5.5, 31), 0, 4)
