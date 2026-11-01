@@ -69,7 +69,7 @@ def spot_to_tariff(interval_time, network, tariff, rrp,
         return adjusted_rrp * slope + intercept
 
 def spot_to_feed_in_tariff(interval_time, network, tariff, rrp,
-                           dlf=1.05905, mlf=1.0154, market=1.0154):
+                           dlf=1.05905, mlf=1.0154, market=1.0154, import_tariff=None):
     """
     Convert spot price from $/MWh to c/kWh for a given network and tariff.
 
@@ -81,6 +81,8 @@ def spot_to_feed_in_tariff(interval_time, network, tariff, rrp,
     - dlf (float): The Distribution Loss Factor.
     - mlf (float): The Metering Loss Factor.
     - market (float): The market factor.
+    - import_tariff (str, optional): The site's import tariff code, for
+      networks whose export price depends on it (Energex two-way NTC 96200).
 
     Returns:
     - float: The price in c/kWh.
@@ -89,7 +91,7 @@ def spot_to_feed_in_tariff(interval_time, network, tariff, rrp,
     network = network.lower()
 
     if network == 'energex':
-        return energex.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
+        return energex.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp, import_tariff=import_tariff)
     elif network == 'ergon':
         return ergon.convert_feed_in_tariff(interval_time, tariff, adjusted_rrp)
     elif network == 'ausgrid':

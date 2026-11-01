@@ -309,6 +309,24 @@ class TestTwoWayTariff(unittest.TestCase):
         # Other tariffs remain spot-only.
         self.assertAlmostEqual(energex.convert_feed_in_tariff(summer, '6900X', 100.0), 10.0, places=2)
 
+    def test_convert_feed_in_tariff_follows_two_way_import_tariff(self):
+        # A 96200 NMI reports its export register as 9800 (LocalVolts metadata
+        # for QB03200779: B1=9800, E1=96200); the reward must still apply.
+        summer = datetime(2026, 11, 1, 18, 5, tzinfo=BRISBANE)
+        self.assertAlmostEqual(
+            energex.convert_feed_in_tariff(summer, '9800', 100.0, import_tariff='96200'), 10.0 + 12.195, places=2)
+        winter = datetime(2026, 7, 15, 12, 5, tzinfo=BRISBANE)
+        self.assertAlmostEqual(
+            energex.convert_feed_in_tariff(winter, '9800', 100.0, import_tariff='96200'), 10.0 - 2.210, places=2)
+        # Outside the reward/charge windows it is spot.
+        midday_summer = datetime(2026, 11, 1, 12, 5, tzinfo=BRISBANE)
+        self.assertAlmostEqual(
+            energex.convert_feed_in_tariff(midday_summer, '9800', 100.0, import_tariff='96200'), 10.0, places=2)
+        # 9800 on any other import tariff stays spot-only.
+        self.assertAlmostEqual(
+            energex.convert_feed_in_tariff(summer, '9800', 100.0, import_tariff='6900'), 10.0, places=2)
+        self.assertAlmostEqual(energex.convert_feed_in_tariff(summer, '9800', 100.0), 10.0, places=2)
+
     def test_get_periods_96200_seasonal(self):
         # get_periods must return season-specific periods: the 17:00-20:00
         # Peak only exists Nov-Mar; outside summer that window is Shoulder.
